@@ -15,7 +15,7 @@ type Database struct {
 
 func New(ctx context.Context) (*Database, error) {
 	cfg := config.AppConfig
-
+	return &Database{}, nil
 	dsn := url.URL{
 		Scheme: cfg.DB_DRIVER,
 		User:   url.UserPassword(cfg.DB_USER, cfg.DB_PASSWORD),
