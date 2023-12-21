@@ -14,14 +14,12 @@ type Client struct {
 
 func (c *Client) Listen() {
 	for {
-		content := make([]byte, 2024)
-		n, err := c.Conn.Read(content)
+		content, err := ReadFromConn(c.Conn)
 		if err != nil {
-			log.Println(err)
+			log.Println("Error while reading")
 			continue
 		}
-
-		c.WriteToConn(content[:n])
+		c.WriteToConn(content)
 	}
 }
 
@@ -79,9 +77,26 @@ func (s *Server) RunTCPServer() {
 		if err != nil {
 			log.Println(err)
 		}
+		oldConn, ok := s.TCPClients[newClient.VccNo]
+		if ok {
+			err := oldConn.Conn.Close()
+			if err != nil {
+				log.Println("Error while closing connection")
+			}
+		}
 		s.TCPClients[newClient.VccNo] = newClient
 		go newClient.Listen()
 		go newClient.Write()
 
 	}
+}
+
+func ReadFromConn(conn *net.TCPConn) ([]byte, error) {
+	buffer := make([]byte, 1024)
+	n, err := conn.Read(buffer)
+	if err != nil {
+		return nil, err
+	}
+	log.Println(string(buffer[:n]))
+	return buffer[:n], nil
 }

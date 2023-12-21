@@ -9,7 +9,7 @@ import (
 
 func (s *Server) SetUpRoutes() {
 
-	s.HTTPServer.Get("/webhook", s.WebHookHandler)
+	s.HTTPServer.Get("/payment", s.WebHookHandler)
 	s.HTTPServer.Get("/health", func(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
