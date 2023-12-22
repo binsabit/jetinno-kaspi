@@ -35,18 +35,20 @@ func (c *Client) Write() {
 				break
 			}
 
-			file, err := os.OpenFile(fmt.Sprintf("./tests/%d.txt", clientCount.Load()), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+			file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", clientCount.Load()), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 			if err != nil {
 				log.Printf("Error while opening file %v\n", err)
+				continue
 			}
 			bytesWritten, err := file.Write(content)
 			if err != nil {
 				log.Printf("Error while writing to file %v\n", err)
+				continue
 			}
 			if bytesWritten == 0 {
-				log.Printf("No content in connection")
+				log.Printf("No content in connection: ClientID:%d", c.VccNo)
+				continue
 			}
-
 		default:
 
 		}
