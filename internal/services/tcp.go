@@ -18,10 +18,10 @@ func (s *Server) Listen(client *Client) {
 	for {
 		content, err := ReadFromConn(client.Conn)
 		if err != nil {
-			log.Println("Error while reading client:%d", client.VccNo)
+			log.Printf("Error while reading client:%d\n", client.VccNo)
 			client.Conn.Close()
 			delete(s.TCPClients, client.VccNo)
-			continue
+			return
 		}
 
 		client.WriteToConn(content)
