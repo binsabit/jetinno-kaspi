@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
 )
 
 type Client struct {
@@ -35,7 +34,8 @@ func (c *Client) Write() {
 			if content == nil {
 				break
 			}
-			file, err := os.OpenFile(fmt.Sprintf("%s.txt", time.Now().Format(time.RFC3339Nano)), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+			_ = os.Mkdir("/tests", os.ModeDir)
+			file, err := os.OpenFile(fmt.Sprintf("./tests/%d.txt", clientCount.Load()), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 			if err != nil {
 				log.Printf("Error while opening file %v\n", err)
 			}
@@ -96,7 +96,6 @@ func (s *Server) RunTCPServer() {
 }
 
 func ReadFromConn(conn *net.TCPConn) ([]byte, error) {
-	//read packet size
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
@@ -104,7 +103,6 @@ func ReadFromConn(conn *net.TCPConn) ([]byte, error) {
 	}
 	packetSize := binary.BigEndian.Uint32(buffer[:n])
 
-	//read the packet itself
 	buffer = make([]byte, packetSize-4)
 	n, err = conn.Read(buffer)
 	if err != nil {
