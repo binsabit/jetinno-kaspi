@@ -14,15 +14,17 @@ type Client struct {
 	writeChan chan []byte
 }
 
-func (c *Client) Listen() {
+func (s *Server) Listen(client *Client) {
 	for {
-		content, err := ReadFromConn(c.Conn)
+		content, err := ReadFromConn(client.Conn)
 		if err != nil {
-			log.Println("Error while reading")
+			log.Println("Error while reading client:%d", client.VccNo)
+			client.Conn.Close()
+			delete(s.TCPClients, client.VccNo)
 			continue
 		}
 
-		c.WriteToConn(content)
+		client.WriteToConn(content)
 	}
 }
 
@@ -91,7 +93,7 @@ func (s *Server) RunTCPServer() {
 			}
 		}
 		s.TCPClients[newClient.VccNo] = newClient
-		go newClient.Listen()
+		go s.Listen(newClient)
 		go newClient.Write()
 
 	}
