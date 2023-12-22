@@ -16,6 +16,7 @@ type DBTX interface {
 
 type Transaction struct {
 	ID        int64     `json:"id"`
+	OrderID   int64     `json:"order_id"`
 	TxnID     int64     `json:"txn_id"`
 	TxnDate   int64     `json:"txn_date,omitempty"`
 	Result    int       `json:"result"`
@@ -38,6 +39,23 @@ func CreateTransaction(ctx context.Context, db DBTX, txn Transaction) (int64, er
 		return 0, err
 	}
 	return id, nil
+}
+
+type UpdateArgs struct {
+	Result *int
+	Status *bool
+}
+
+func UpdateTransaction(ctx context.Context, db DBTX, upd UpdateArgs) error {
+	query := `UPDATE transactions set 
+              	status = coalesce($1,status)
+              	result = coalesce($2,result);`
+
+	_, err := db.Exec(ctx, query, upd.Status, upd.Result)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetTransactionBYTxnID(ctx context.Context, db DBTX, id int64) (*Transaction, error) {

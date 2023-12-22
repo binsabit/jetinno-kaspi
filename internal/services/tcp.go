@@ -1,9 +1,12 @@
 package services
 
 import (
+	"encoding/binary"
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 type Client struct {
@@ -19,6 +22,7 @@ func (c *Client) Listen() {
 			log.Println("Error while reading")
 			continue
 		}
+
 		c.WriteToConn(content)
 	}
 }
@@ -31,7 +35,7 @@ func (c *Client) Write() {
 			if content == nil {
 				break
 			}
-			file, err := os.OpenFile("content.txt", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+			file, err := os.OpenFile(fmt.Sprintf("%s.txt", time.Now().Format(time.RFC3339Nano)), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 			if err != nil {
 				log.Printf("Error while opening file %v\n", err)
 			}
@@ -92,11 +96,19 @@ func (s *Server) RunTCPServer() {
 }
 
 func ReadFromConn(conn *net.TCPConn) ([]byte, error) {
-	buffer := make([]byte, 1024)
+	//read packet size
+	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
 		return nil, err
 	}
-	log.Println(string(buffer[:n]))
+	packetSize := binary.BigEndian.Uint32(buffer[:n])
+
+	//read the packet itself
+	buffer = make([]byte, packetSize-4)
+	n, err = conn.Read(buffer)
+	if err != nil {
+		return nil, err
+	}
 	return buffer[:n], nil
 }

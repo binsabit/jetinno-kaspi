@@ -1,7 +1,12 @@
 package pkg
 
-const (
+var (
 	KASPI_PAYMENT_SUCCESS   = 0
 	KASPI_PAYMENT_NOTEXISTS = 3
 	KASPI_PROVIDER_ERROR    = 5
+)
+
+var (
+	PAYMENT_STATUS_CREATED = false
+	PAYMENT_STATUS_PAID    = true
 )

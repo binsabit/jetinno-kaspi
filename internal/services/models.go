@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/xml"
 	"github.com/binsabit/jetinno-kapsi/config"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"strconv"
@@ -49,12 +48,11 @@ func NewKaspiWebHookRequest(query map[string]string) KaspiWebHookRequest {
 }
 
 type KaspiWebHookResponse struct {
-	XMLName       xml.Name `xml:"response"`
-	ProviderTxnID int64    `json:"prv_txn_id" xml:"prv_txn_id"`
-	TxnID         int64    `json:"txn_id" xml:"txn_id"`
-	Result        int      `json:"result" xml:"result"`
-	Sum           string   `json:"sum" xml:"sum"`
-	Comment       string   `json:"comment" xml:"comment"`
+	ProviderTxnID int64  `json:"prv_txn_id" xml:"prv_txn_id"`
+	TxnID         int64  `json:"txn_id" xml:"txn_id"`
+	Result        int    `json:"result" xml:"result"`
+	Sum           string `json:"sum" xml:"sum"`
+	Comment       string `json:"comment" xml:"comment"`
 }
 
 type KaspiQuickPayRequest struct {
