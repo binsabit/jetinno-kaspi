@@ -13,6 +13,15 @@ func (s *Server) SetUpRoutes() {
 	s.HTTPServer.Get("/health", func(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
+	s.HTTPServer.Get("/message/:msg", func(ctx *fiber.Ctx) error {
+		m := map[int32]bool{}
+
+		for _, v := range s.TCPClients {
+			v.WriteToConn([]byte(ctx.Params("msg")))
+			m[v.VccNo] = true
+		}
+		return ctx.Status(fiber.StatusOK).JSON(m)
+	})
 }
 func (s Server) RunHTTPServer(port string) error {
 	s.SetUpRoutes()
