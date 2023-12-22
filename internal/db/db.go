@@ -14,7 +14,6 @@ type Database struct {
 }
 
 func New(ctx context.Context) (*Database, error) {
-	//return &Database{}, nil
 	cfg := config.AppConfig
 	dsn := url.URL{
 		Scheme: cfg.DB_DRIVER,
@@ -25,7 +24,7 @@ func New(ctx context.Context) (*Database, error) {
 
 	q := dsn.Query()
 
-	q.Add("sslmode", "disabled")
+	q.Add("sslmode", "disable")
 
 	dsn.RawQuery = q.Encode()
 	poolConfig, err := pgxpool.ParseConfig(dsn.String())
