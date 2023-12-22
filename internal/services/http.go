@@ -15,6 +15,7 @@ func (s *Server) SetUpRoutes() {
 	})
 }
 func (s Server) RunHTTPServer(port string) error {
+	s.SetUpRoutes()
 	return s.HTTPServer.Listen(":" + port)
 }
 
