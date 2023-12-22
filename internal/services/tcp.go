@@ -34,7 +34,7 @@ func (c *Client) Write() {
 			if content == nil {
 				break
 			}
-			_ = os.Mkdir("/tests", os.ModeDir)
+
 			file, err := os.OpenFile(fmt.Sprintf("./tests/%d.txt", clientCount.Load()), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 			if err != nil {
 				log.Printf("Error while opening file %v\n", err)
