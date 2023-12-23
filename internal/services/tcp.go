@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/binsabit/jetinno-kapsi/pkg"
 	"log"
 	"net"
 	"os"
@@ -57,9 +58,44 @@ func (c *Client) Write() {
 	}
 }
 
-func (c *Client) HandleCommand(cmd string, payload interface{}) error {
+type Request struct {
+	Command        string            `json:"cmd"`
+	VmcNo          string            `json:"vmc_no"`
+	State          *string           `json:"state,omitempty"`
+	Timestamp      *string           `json:"timestamp,omitempty"`
+	Login_Count    *string           `json:"login_count,omitempty"`
+	Sign           *string           `json:"sign,omitempty"`
+	Version        *string           `json:"version,omitempty"`
+	IO_Version     *string           `json:"io_version,omitempty"`
+	Carrier_Code   *string           `json:"carrier_code,omitempty"`
+	Date_Time      *string           `json:"date_time,omitempty"`
+	Server_List    *string           `json:"server_list,omitempty"`
+	Ret            *string           `json:"ret,omitempty"`
+	Status         *string           `json:"status,omitempty"`
+	Supply         map[string]string `json:"supply,omitempty"`
+	Time           *string           `json:"time,omitempty"`
+	IsLock         *bool             `json:"islock,omitempty"`
+	QR_type        *string           `json:"qr_type,omitempty"`
+	Pruduct_ID     *int64            `json:"product_id,omitempty"`
+	Amount         *int64            `json:"Amount,omitempty"`
+	Order_No       *string           `json:"order_no,omitempty"`
+	QRCode         *string           `json:"qrcode,omitempty"`
+	Product_Amount *string           `json:"product_amount,omitempty"`
+	PayType        *string           `json:"paytype,omitempty"`
+	PayDone        *bool             `json:"paydone,omitempty"`
+}
+
+func (c *Client) HandleCommand(cmd string, payload []byte) error {
 	switch cmd {
+	case pkg.COMMAND_HEARDBEAT:
+	case pkg.COMMAND_ERROR_REQUEST:
+	case pkg.COMMAND_LOGIN_REQUEST:
+	case pkg.COMMAND_MACHINESTATUS_REQUEST:
+	case pkg.COMMAND_QR_REQUEST:
+	case pkg.COMMAND_CHECKORDER_REQUEST:
+	case pkg.COMMAND_PAYDONE_REQUEST:
 	default:
+
 	}
 	return nil
 }
@@ -86,13 +122,17 @@ func (s *Server) RunTCPServer() {
 			log.Println(err)
 		}
 		oldConn, ok := s.TCPClients[newClient.VccNo]
+
 		if ok {
 			err := oldConn.Conn.Close()
+
 			if err != nil {
 				log.Println("Error while closing connection")
+				continue
 			}
 		}
 		s.TCPClients[newClient.VccNo] = newClient
+
 		go s.Listen(newClient)
 		go newClient.Write()
 
