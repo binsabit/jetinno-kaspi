@@ -21,6 +21,8 @@ type Client struct {
 func (s *Server) Listen(client *Client) {
 	for {
 		content, err := ReadFromConn(client.Conn)
+		log.Println("in goroutine")
+
 		if err != nil {
 
 			if errors.Is(err, io.EOF) {
@@ -123,7 +125,7 @@ func (s *Server) RunTCPServer() {
 		if err != nil {
 			log.Println(err)
 		}
-
+		log.Println("in main thread")
 		data, err := ReadFromConn(conn)
 		if err != nil {
 			log.Println(err)
