@@ -18,6 +18,8 @@ type Server struct {
 	TCPServer  *net.TCPListener
 	TCPClients map[int64]*Client
 	HTTPServer *fiber.App
+	connChan   chan *net.TCPConn
+	doneChan   chan struct{}
 	Database   *db.Database
 }
 

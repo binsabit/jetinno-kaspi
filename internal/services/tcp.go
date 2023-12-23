@@ -2,68 +2,17 @@ package services
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"io"
 	"log"
 	"net"
 	"os"
 )
 
 type Client struct {
-	VccNo     int64
-	Conn      *net.TCPConn
-	writeChan chan []byte
-}
-
-func (s *Server) Listen(client *Client) {
-	for {
-		content, err := ReadFromConn(client.Conn)
-		log.Println("in goroutine")
-
-		if err != nil {
-
-			if errors.Is(err, io.EOF) {
-				continue
-			}
-			log.Printf("Error while reading client:%d\n error:%v", client.VccNo, err)
-			client.Conn.Close()
-			delete(s.TCPClients, client.VccNo)
-			return
-		}
-
-		client.WriteToConn(content)
-	}
-}
-
-func (c *Client) Write(content *Request) error {
-
-	log.Println("writing to file")
-	if content == nil {
-		return nil
-	}
-
-	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", c.VccNo), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		log.Printf("Error while opening file %v\n", err)
-		return err
-	}
-	bytes, err := sonic.Marshal(content)
-	if err != nil {
-		return err
-	}
-	bytesWritten, err := file.Write(bytes)
-	if err != nil {
-		log.Printf("Error while writing to file %v\n", err)
-		return err
-	}
-	if bytesWritten == 0 {
-		log.Printf("No content in connection: ClientID:%d", c.VccNo)
-		return err
-	}
-	return nil
+	VmcNo int64
+	Conn  *net.TCPConn
 }
 
 type Request struct {
@@ -94,65 +43,51 @@ type Request struct {
 	PayDone        *bool             `json:"paydone,omitempty"`
 }
 
-func (c *Client) HandleCommand(cmd string, payload []byte) error {
-	switch cmd {
-	case pkg.COMMAND_HEARDBEAT:
-	case pkg.COMMAND_ERROR_REQUEST:
-	case pkg.COMMAND_LOGIN_REQUEST:
-	case pkg.COMMAND_MACHINESTATUS_REQUEST:
-	case pkg.COMMAND_QR_REQUEST:
-	case pkg.COMMAND_CHECKORDER_REQUEST:
-	case pkg.COMMAND_PAYDONE_REQUEST:
-	default:
-
-	}
-	return nil
-}
-
-func (c *Client) WriteToConn(msg *Request) {
-	log.Println(c.Write(msg))
-}
-
 func (s *Server) RunTCPServer() {
 	for {
-
-		conn, err := s.TCPServer.AcceptTCP()
-		if err != nil {
-			log.Println(err)
-		}
-
-		err = conn.SetKeepAlive(true)
-		if err != nil {
-			log.Println(err)
-		}
-		log.Println("in main thread")
-		data, err := ReadFromConn(conn)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		newClient := &Client{
-			VccNo:     data.VmcNo,
-			Conn:      conn,
-			writeChan: make(chan []byte, 10),
-		}
-		oldConn, ok := s.TCPClients[newClient.VccNo]
-
-		if ok {
-			err := oldConn.Conn.Close()
-			delete(s.TCPClients, newClient.VccNo)
+		select {
+		case <-s.doneChan:
+			return
+		default:
+			conn, err := s.TCPServer.AcceptTCP()
 			if err != nil {
-				log.Println("Error while closing connection")
+				log.Println(err)
 			}
+
+			err = conn.SetKeepAlive(true)
+			if err != nil {
+				log.Println(err)
+			}
+			s.connChan <- conn
 		}
-		s.TCPClients[newClient.VccNo] = newClient
-
-		go s.Listen(newClient)
-
 	}
 }
 
-func ReadFromConn(conn *net.TCPConn) (*Request, error) {
+func (s *Server) HandleConnections() {
+	select {
+	case <-s.doneChan:
+		return
+	case conn := <-s.connChan:
+		go s.HandleEachConn(conn)
+	}
+}
+
+func (s *Server) HandleEachConn(conn *net.TCPConn) {
+	request, err := s.ReadFromConnection(conn)
+	if err != nil {
+		log.Println(err)
+	}
+
+	newClient := &Client{
+		VmcNo: request.VmcNo,
+		Conn:  conn,
+	}
+	s.TCPClients[newClient.VmcNo] = newClient
+
+	err = newClient.HandleRequest(request)
+}
+
+func (s *Server) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
@@ -172,4 +107,50 @@ func ReadFromConn(conn *net.TCPConn) (*Request, error) {
 		return nil, err
 	}
 	return &req, nil
+}
+
+func (c *Client) Write(content *Request) error {
+
+	log.Println("writing to file")
+	if content == nil {
+		return nil
+	}
+
+	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", c.VmcNo), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		log.Printf("Error while opening file %v\n", err)
+		return err
+	}
+	bytes, err := sonic.Marshal(content)
+	if err != nil {
+		return err
+	}
+	bytesWritten, err := file.Write(bytes)
+	if err != nil {
+		log.Printf("Error while writing to file %v\n", err)
+		return err
+	}
+	if bytesWritten == 0 {
+		log.Printf("No content in connection: ClientID:%d", c.VmcNo)
+		return err
+	}
+	return nil
+}
+
+func (c *Client) HandleRequest(request *Request) error {
+	if request == nil {
+		return fmt.Errorf("request is empty")
+	}
+	switch request.Command {
+	case pkg.COMMAND_HEARDBEAT:
+	case pkg.COMMAND_ERROR_REQUEST:
+	case pkg.COMMAND_LOGIN_REQUEST:
+	case pkg.COMMAND_MACHINESTATUS_REQUEST:
+	case pkg.COMMAND_QR_REQUEST:
+	case pkg.COMMAND_CHECKORDER_REQUEST:
+	case pkg.COMMAND_PAYDONE_REQUEST:
+	default:
+		return c.Write(request)
+	}
+	return nil
 }
