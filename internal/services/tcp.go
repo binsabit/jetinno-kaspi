@@ -43,7 +43,7 @@ func (c *Client) Write(content []byte) error {
 		return nil
 	}
 
-	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", clientCount.Load()), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", c.VccNo), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		log.Printf("Error while opening file %v\n", err)
 		return err
