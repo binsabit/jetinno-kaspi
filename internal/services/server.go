@@ -16,7 +16,7 @@ var clientCount atomic.Int32
 
 type Server struct {
 	TCPServer  *net.TCPListener
-	TCPClients map[int32]*Client
+	TCPClients map[string]*Client
 	HTTPServer *fiber.App
 	Database   *db.Database
 }
@@ -46,7 +46,7 @@ func NewServer(TCPPort string) (*Server, error) {
 
 	return &Server{
 		TCPServer:  tcpListener,
-		TCPClients: make(map[int32]*Client),
+		TCPClients: make(map[string]*Client),
 		HTTPServer: httpListener,
 		Database:   database,
 	}, nil

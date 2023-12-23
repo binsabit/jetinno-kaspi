@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
+	"github.com/bytedance/sonic"
 	"io"
 	"log"
 	"net"
@@ -12,7 +13,7 @@ import (
 )
 
 type Client struct {
-	VccNo     int32
+	VccNo     string
 	Conn      *net.TCPConn
 	writeChan chan []byte
 }
@@ -112,15 +113,27 @@ func (s *Server) RunTCPServer() {
 		if err != nil {
 			log.Println(err)
 		}
-		clientCount.Add(1)
-		newClient := &Client{
-			VccNo:     clientCount.Load(),
-			Conn:      conn,
-			writeChan: make(chan []byte, 10),
-		}
+
 		err = conn.SetKeepAlive(true)
 		if err != nil {
 			log.Println(err)
+		}
+
+		data, err := ReadFromConn(conn)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		var req Request
+		err = sonic.ConfigFastest.Unmarshal(data, &req)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		newClient := &Client{
+			VccNo:     req.VmcNo,
+			Conn:      conn,
+			writeChan: make(chan []byte, 10),
 		}
 		oldConn, ok := s.TCPClients[newClient.VccNo]
 
