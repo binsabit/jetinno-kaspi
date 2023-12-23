@@ -35,33 +35,28 @@ func (s *Server) Listen(client *Client) {
 	}
 }
 
-func (c *Client) Write() {
-	for {
-		select {
-		case content := <-c.writeChan:
-			log.Println(string(content))
-			if content == nil {
-				break
-			}
+func (c *Client) Write(content []byte) error {
 
-			file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", clientCount.Load()), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-			if err != nil {
-				log.Printf("Error while opening file %v\n", err)
-				continue
-			}
-			bytesWritten, err := file.Write(content)
-			if err != nil {
-				log.Printf("Error while writing to file %v\n", err)
-				continue
-			}
-			if bytesWritten == 0 {
-				log.Printf("No content in connection: ClientID:%d", c.VccNo)
-				continue
-			}
-		default:
-
-		}
+	log.Println(string(content))
+	if content == nil {
+		return nil
 	}
+
+	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", clientCount.Load()), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		log.Printf("Error while opening file %v\n", err)
+		return err
+	}
+	bytesWritten, err := file.Write(content)
+	if err != nil {
+		log.Printf("Error while writing to file %v\n", err)
+		return err
+	}
+	if bytesWritten == 0 {
+		log.Printf("No content in connection: ClientID:%d", c.VccNo)
+		return err
+	}
+	return nil
 }
 
 type Request struct {
@@ -107,7 +102,7 @@ func (c *Client) HandleCommand(cmd string, payload []byte) error {
 }
 
 func (c *Client) WriteToConn(msg []byte) {
-	c.writeChan <- msg
+	log.Println(c.Write(msg))
 }
 
 func (s *Server) RunTCPServer() {
@@ -140,7 +135,6 @@ func (s *Server) RunTCPServer() {
 		s.TCPClients[newClient.VccNo] = newClient
 
 		go s.Listen(newClient)
-		go newClient.Write()
 
 	}
 }
