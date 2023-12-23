@@ -14,15 +14,7 @@ func (s *Server) SetUpRoutes() {
 	s.HTTPServer.Get("/health", func(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
-	s.HTTPServer.Get("/message/:msg", func(ctx *fiber.Ctx) error {
-		m := map[int64]bool{}
 
-		for _, v := range s.TCPClients {
-			v.WriteToConn([]byte(ctx.Params("msg")))
-			m[v.VccNo] = true
-		}
-		return ctx.Status(fiber.StatusOK).JSON(m)
-	})
 	s.HTTPServer.Get("/log/:id", func(ctx *fiber.Ctx) error {
 		return ctx.Download(fmt.Sprintf("./logs/%s.txt", ctx.Params("id")))
 	})
@@ -54,8 +46,8 @@ func (s *Server) WebHookHandler(ctx *fiber.Ctx) error {
 	}
 
 	if response.Result == pkg.KASPI_PAYMENT_SUCCESS {
-		vccNo, _ := strconv.ParseInt(request.Account, 10, 64)
-		s.TCPClients[vccNo].WriteToConn([]byte("success"))
+		//vccNo, _ := strconv.ParseInt(request.Account, 10, 64)
+		//s.TCPClients[vccNo].WriteToConn([]byte("success"))
 	}
 	return ctx.Status(fiber.StatusOK).XML(response)
 }

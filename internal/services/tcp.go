@@ -36,9 +36,9 @@ func (s *Server) Listen(client *Client) {
 	}
 }
 
-func (c *Client) Write(content []byte) error {
+func (c *Client) Write(content *Request) error {
 
-	log.Println(string(content))
+	log.Println(content)
 	if content == nil {
 		return nil
 	}
@@ -48,7 +48,11 @@ func (c *Client) Write(content []byte) error {
 		log.Printf("Error while opening file %v\n", err)
 		return err
 	}
-	bytesWritten, err := file.Write(content)
+	bytes, err := sonic.Marshal(content)
+	if err != nil {
+		return err
+	}
+	bytesWritten, err := file.Write(bytes)
 	if err != nil {
 		log.Printf("Error while writing to file %v\n", err)
 		return err
@@ -103,7 +107,7 @@ func (c *Client) HandleCommand(cmd string, payload []byte) error {
 	return nil
 }
 
-func (c *Client) WriteToConn(msg []byte) {
+func (c *Client) WriteToConn(msg *Request) {
 	log.Println(c.Write(msg))
 }
 
@@ -125,15 +129,8 @@ func (s *Server) RunTCPServer() {
 			log.Println(err)
 			continue
 		}
-		var req Request
-		log.Println(string(data[8:]))
-		err = sonic.ConfigFastest.Unmarshal(data[8:], &req)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
 		newClient := &Client{
-			VccNo:     req.VmcNo,
+			VccNo:     data.VmcNo,
 			Conn:      conn,
 			writeChan: make(chan []byte, 10),
 		}
@@ -153,7 +150,7 @@ func (s *Server) RunTCPServer() {
 	}
 }
 
-func ReadFromConn(conn *net.TCPConn) ([]byte, error) {
+func ReadFromConn(conn *net.TCPConn) (*Request, error) {
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
@@ -166,5 +163,10 @@ func ReadFromConn(conn *net.TCPConn) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return buffer[:n], nil
+	var req Request
+	err = sonic.ConfigFastest.Unmarshal(buffer[8:], &req)
+	if err != nil {
+		return nil, err
+	}
+	return &req, nil
 }
