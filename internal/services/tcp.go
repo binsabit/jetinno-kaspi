@@ -126,7 +126,7 @@ func (s *Server) RunTCPServer() {
 		}
 		var req Request
 		log.Println(string(data[8:]))
-		err = sonic.ConfigFastest.Unmarshal(data[9:], &req)
+		err = sonic.ConfigFastest.Unmarshal(data[8:], &req)
 		if err != nil {
 			log.Println(err)
 			continue
