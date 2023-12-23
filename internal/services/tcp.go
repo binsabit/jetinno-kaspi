@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
@@ -10,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 )
 
 type Client struct {
@@ -159,8 +159,10 @@ func ReadFromConn(conn *net.TCPConn) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	packetSize := binary.BigEndian.Uint32(buffer[:n])
-
+	packetSize, err := strconv.Atoi(string(buffer[:n]))
+	if err != nil {
+		return nil, err
+	}
 	buffer = make([]byte, packetSize-4)
 	n, err = conn.Read(buffer)
 	if err != nil {
