@@ -44,6 +44,11 @@ type Request struct {
 }
 
 func (s *Server) RunTCPServer() {
+	go s.HandleConnections()
+	s.AcceptConnections()
+}
+
+func (s *Server) AcceptConnections() {
 	for {
 		select {
 		case <-s.doneChan:
@@ -64,11 +69,13 @@ func (s *Server) RunTCPServer() {
 }
 
 func (s *Server) HandleConnections() {
-	select {
-	case <-s.doneChan:
-		return
-	case conn := <-s.connChan:
-		go s.HandleEachConn(conn)
+	for {
+		select {
+		case <-s.doneChan:
+			return
+		case conn := <-s.connChan:
+			go s.HandleEachConn(conn)
+		}
 	}
 }
 
