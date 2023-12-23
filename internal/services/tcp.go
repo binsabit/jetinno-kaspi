@@ -90,7 +90,7 @@ func (s *Server) HandleEachConn(conn *net.TCPConn) {
 		Conn:  conn,
 	}
 	s.TCPClients[newClient.VmcNo] = newClient
-
+	log.Println("gere")
 	err = newClient.HandleRequest(request)
 }
 
