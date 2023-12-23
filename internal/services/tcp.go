@@ -141,10 +141,9 @@ func (s *Server) RunTCPServer() {
 
 		if ok {
 			err := oldConn.Conn.Close()
-
+			delete(s.TCPClients, newClient.VccNo)
 			if err != nil {
 				log.Println("Error while closing connection")
-				continue
 			}
 		}
 		s.TCPClients[newClient.VccNo] = newClient
