@@ -65,7 +65,7 @@ type Request struct {
 	VmcNo          string            `json:"vmc_no"`
 	State          *string           `json:"state,omitempty"`
 	Timestamp      *string           `json:"timestamp,omitempty"`
-	Login_Count    *string           `json:"login_count,omitempty"`
+	Login_Count    *int64            `json:"login_count,omitempty"`
 	Sign           *string           `json:"sign,omitempty"`
 	Version        *string           `json:"version,omitempty"`
 	IO_Version     *string           `json:"io_version,omitempty"`
