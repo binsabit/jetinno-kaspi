@@ -38,7 +38,7 @@ func (s *Server) Listen(client *Client) {
 
 func (c *Client) Write(content *Request) error {
 
-	log.Println(content)
+	log.Println("writing to file")
 	if content == nil {
 		return nil
 	}
