@@ -33,7 +33,7 @@ func (c *Client) Write() {
 	for {
 		select {
 		case content := <-c.writeChan:
-			log.Println(content)
+			log.Println(string(content))
 			if content == nil {
 				break
 			}
