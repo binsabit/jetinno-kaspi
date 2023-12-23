@@ -13,7 +13,7 @@ import (
 )
 
 type Client struct {
-	VccNo     string
+	VccNo     int64
 	Conn      *net.TCPConn
 	writeChan chan []byte
 }
@@ -62,7 +62,7 @@ func (c *Client) Write(content []byte) error {
 
 type Request struct {
 	Command        string            `json:"cmd"`
-	VmcNo          string            `json:"vmc_no"`
+	VmcNo          int64             `json:"vmc_no"`
 	State          *string           `json:"state,omitempty"`
 	Timestamp      *string           `json:"timestamp,omitempty"`
 	Login_Count    *string           `json:"login_count,omitempty"`

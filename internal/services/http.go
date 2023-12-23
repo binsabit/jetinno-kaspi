@@ -15,7 +15,7 @@ func (s *Server) SetUpRoutes() {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
 	s.HTTPServer.Get("/message/:msg", func(ctx *fiber.Ctx) error {
-		m := map[string]bool{}
+		m := map[int64]bool{}
 
 		for _, v := range s.TCPClients {
 			v.WriteToConn([]byte(ctx.Params("msg")))
@@ -54,7 +54,8 @@ func (s *Server) WebHookHandler(ctx *fiber.Ctx) error {
 	}
 
 	if response.Result == pkg.KASPI_PAYMENT_SUCCESS {
-		s.TCPClients[request.Account].WriteToConn([]byte("success"))
+		vccNo, _ := strconv.ParseInt(request.Account, 10, 64)
+		s.TCPClients[vccNo].WriteToConn([]byte("success"))
 	}
 	return ctx.Status(fiber.StatusOK).XML(response)
 }
