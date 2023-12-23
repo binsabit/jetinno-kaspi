@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
+	"github.com/bytedance/sonic"
 	"io"
 	"log"
 	"net"
@@ -125,11 +126,11 @@ func (s *Server) RunTCPServer() {
 		}
 		var req Request
 		log.Println(string(data[8:]))
-		//err = sonic.ConfigFastest.Unmarshal(data[9:], &req)
-		//if err != nil {
-		//	log.Println(err)
-		//	continue
-		//}
+		err = sonic.ConfigFastest.Unmarshal(data[9:], &req)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
 		newClient := &Client{
 			VccNo:     req.VmcNo,
 			Conn:      conn,
