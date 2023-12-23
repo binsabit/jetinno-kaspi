@@ -2,8 +2,10 @@ package services
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -19,7 +21,11 @@ func (s *Server) Listen(client *Client) {
 	for {
 		content, err := ReadFromConn(client.Conn)
 		if err != nil {
+
 			log.Printf("Error while reading client:%d\n error:%v", client.VccNo, err)
+			if errors.Is(err, io.EOF) {
+				continue
+			}
 			client.Conn.Close()
 			delete(s.TCPClients, client.VccNo)
 			return
