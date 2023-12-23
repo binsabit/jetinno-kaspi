@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/gofiber/fiber/v2"
 	"log"
@@ -21,6 +22,9 @@ func (s *Server) SetUpRoutes() {
 			m[v.VccNo] = true
 		}
 		return ctx.Status(fiber.StatusOK).JSON(m)
+	})
+	s.HTTPServer.Get("/log/:id", func(ctx *fiber.Ctx) error {
+		return ctx.Download(fmt.Sprintf("./logs/%s.txt", ctx.Params("id")))
 	})
 }
 func (s Server) RunHTTPServer(port string) error {
