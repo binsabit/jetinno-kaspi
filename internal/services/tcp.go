@@ -163,8 +163,9 @@ func ReadFromConn(conn *net.TCPConn) (*Request, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Println(buffer[8:n])
 	var req Request
-	err = sonic.ConfigFastest.Unmarshal(buffer[8:], &req)
+	err = sonic.ConfigFastest.Unmarshal(buffer[8:n], &req)
 	if err != nil {
 		return nil, err
 	}
