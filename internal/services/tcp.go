@@ -128,7 +128,7 @@ func (c *Client) HandleRequest(request *Request) error {
 	if request == nil {
 		return fmt.Errorf("request is empty")
 	}
-	log.Println("request :", *request)
+	log.Printf("request : %v\n", *request)
 	var response Request
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
@@ -142,7 +142,7 @@ func (c *Client) HandleRequest(request *Request) error {
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	default:
 	}
-	log.Println("resposne :", response)
+	log.Printf("resposne :%v\n", response)
 	return c.WriteToConn(response)
 }
 
