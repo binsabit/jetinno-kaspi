@@ -128,12 +128,13 @@ func (c *Client) HandleRequest(request *Request) error {
 	if request == nil {
 		return fmt.Errorf("request is empty")
 	}
-	log.Println(request)
+	log.Println("request :", *request)
+	var response Request
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
 	case pkg.COMMAND_ERROR_REQUEST:
 	case pkg.COMMAND_LOGIN_REQUEST:
-		return c.Login(request)
+		response = c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
 	case pkg.COMMAND_QR_REQUEST:
 
@@ -141,7 +142,8 @@ func (c *Client) HandleRequest(request *Request) error {
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	default:
 	}
-	return c.Write(request)
+	log.Println("resposne :", response)
+	return c.WriteToConn(response)
 }
 
 func (c *Client) HB(request *Request) error {
@@ -152,7 +154,7 @@ func (c *Client) QR(request *Request) error {
 	return nil
 }
 
-func (c *Client) Login(request *Request) error {
+func (c *Client) Login(request *Request) Request {
 	carrierCode := "TW-00418"
 	dateTime := time.Now().Format(time.DateTime)
 	serverlist := "185.100.67.252"
@@ -165,6 +167,10 @@ func (c *Client) Login(request *Request) error {
 		Server_List:  &serverlist,
 		Ret:          &ret,
 	}
+	return response
+}
+
+func (c *Client) WriteToConn(response Request) error {
 	data, err := sonic.ConfigFastest.Marshal(response)
 	if err != nil {
 		return err
