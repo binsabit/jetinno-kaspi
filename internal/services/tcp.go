@@ -58,6 +58,7 @@ func (s *Server) RunTCPServer() {
 		}
 		newClient := &Client{
 			Conn:   conn,
+			done:   make(chan struct{}),
 			Server: s,
 			VmcNo:  1,
 		}
