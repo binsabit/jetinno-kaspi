@@ -13,6 +13,7 @@ import (
 type Client struct {
 	VmcNo int64
 	Conn  *net.TCPConn
+	done  chan struct{}
 }
 
 type Request struct {
@@ -44,57 +45,53 @@ type Request struct {
 }
 
 func (s *Server) RunTCPServer() {
-	go s.HandleConnections()
-	s.AcceptConnections()
+	for {
+		conn, err := s.TCPServer.AcceptTCP()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		newClient := &Client{
+			Conn:  conn,
+			VmcNo: 1,
+		}
+		request, err := newClient.ReadFromConnection(conn)
+		if err != nil {
+			log.Println(err)
+		}
+		if newClient == nil {
+			continue
+		}
+
+		newClient.VmcNo = request.VmcNo
+		if val, ok := s.TCPClients[newClient.VmcNo]; ok {
+			val.done <- struct{}{}
+		}
+		s.TCPClients[newClient.VmcNo] = newClient
+
+		err = newClient.HandleRequest(request)
+		go newClient.ListenConnection()
+	}
 }
 
-func (s *Server) AcceptConnections() {
+func (c *Client) ListenConnection() {
+
 	for {
 		select {
-		case <-s.doneChan:
+		case <-c.done:
 			return
 		default:
-			conn, err := s.TCPServer.AcceptTCP()
+			request, err := c.ReadFromConnection(c.Conn)
 			if err != nil {
 				log.Println(err)
 			}
-
-			err = conn.SetKeepAlive(true)
-			if err != nil {
-				log.Println(err)
-			}
-			s.connChan <- conn
+			log.Println(c.HandleRequest(request))
 		}
 	}
 }
 
-func (s *Server) HandleConnections() {
-	for {
-		select {
-		case <-s.doneChan:
-			return
-		case conn := <-s.connChan:
-			go s.HandleEachConn(conn)
-		}
-	}
-}
-
-func (s *Server) HandleEachConn(conn *net.TCPConn) {
-	request, err := s.ReadFromConnection(conn)
-	if err != nil {
-		log.Println(err)
-	}
-
-	newClient := &Client{
-		VmcNo: request.VmcNo,
-		Conn:  conn,
-	}
-	s.TCPClients[newClient.VmcNo] = newClient
-	log.Println("gere")
-	err = newClient.HandleRequest(request)
-}
-
-func (s *Server) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
+func (s *Client) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
@@ -118,7 +115,6 @@ func (s *Server) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 
 func (c *Client) Write(content *Request) error {
 
-	log.Println("writing to file")
 	if content == nil {
 		return nil
 	}
@@ -141,6 +137,7 @@ func (c *Client) Write(content *Request) error {
 		log.Printf("No content in connection: ClientID:%d", c.VmcNo)
 		return err
 	}
+	_, _ = file.Write([]byte("\n"))
 	return nil
 }
 
@@ -157,7 +154,6 @@ func (c *Client) HandleRequest(request *Request) error {
 	case pkg.COMMAND_CHECKORDER_REQUEST:
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	default:
-		return c.Write(request)
 	}
-	return nil
+	return c.Write(request)
 }

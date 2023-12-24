@@ -51,5 +51,6 @@ func NewServer(TCPPort string) (*Server, error) {
 		TCPClients: make(map[int64]*Client),
 		HTTPServer: httpListener,
 		Database:   database,
+		connChan:   make(chan *net.TCPConn, 100),
 	}, nil
 }

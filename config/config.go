@@ -9,6 +9,7 @@ import (
 var AppConfig *Config
 
 type Config struct {
+	ENV                 string `mapstructure:"ENV"`
 	Port                string `mapstructure:"SERVER_PORT"`
 	KASPI_SERVICE_ID    string `mapstructure:"KASPI_SERVICE_ID"`
 	KASPI_PAYMENT_URL   string `mapstructure:"KASPI_PAYMENT_URL"`

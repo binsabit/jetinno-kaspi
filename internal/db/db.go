@@ -14,7 +14,9 @@ type Database struct {
 }
 
 func New(ctx context.Context) (*Database, error) {
-	//return &Database{}, nil
+	if config.AppConfig.ENV == "test" {
+		return &Database{}, nil
+	}
 	cfg := config.AppConfig
 	dsn := url.URL{
 		Scheme: cfg.DB_DRIVER,
