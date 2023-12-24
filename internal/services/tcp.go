@@ -128,6 +128,7 @@ func (c *Client) HandleRequest(request *Request) error {
 	if request == nil {
 		return fmt.Errorf("request is empty")
 	}
+	log.Println(request)
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
 	case pkg.COMMAND_ERROR_REQUEST:
@@ -135,11 +136,20 @@ func (c *Client) HandleRequest(request *Request) error {
 		return c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
 	case pkg.COMMAND_QR_REQUEST:
+
 	case pkg.COMMAND_CHECKORDER_REQUEST:
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	default:
 	}
 	return c.Write(request)
+}
+
+func (c *Client) HB(request *Request) error {
+	return nil
+}
+
+func (c *Client) QR(request *Request) error {
+	return nil
 }
 
 func (c *Client) Login(request *Request) error {
