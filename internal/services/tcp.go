@@ -55,8 +55,9 @@ func (s *Server) RunTCPServer() {
 			continue
 		}
 		newClient := &Client{
-			Conn:  conn,
-			VmcNo: 1,
+			Conn:   conn,
+			Server: s,
+			VmcNo:  1,
 		}
 		go newClient.ListenConnection()
 	}
