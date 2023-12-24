@@ -2,13 +2,10 @@ package services
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"io"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 )
@@ -55,50 +52,35 @@ func (s *Server) RunTCPServer() {
 			continue
 		}
 
-		newClient := &Client{
-			Conn:  conn,
-			VmcNo: 1,
-		}
-		request, err := newClient.ReadFromConnection(conn)
-		if err != nil {
-			log.Println(err)
-		}
-		if newClient == nil {
-			continue
-		}
-
-		newClient.VmcNo = request.VmcNo
-		if val, ok := s.TCPClients[newClient.VmcNo]; ok {
-			val.done <- struct{}{}
-		}
-		s.TCPClients[newClient.VmcNo] = newClient
-		err = newClient.HandleRequest(request)
-		log.Println("handling command in goroutine")
-		go newClient.ListenConnection()
+		go s.ListenConnection(conn)
 	}
 }
 
-func (c *Client) ListenConnection() {
-	no := rand.Int63()
+func (s *Server) ListenConnection(conn *net.TCPConn) {
 	for {
 		select {
-		case <-c.done:
-			return
 		default:
-			request, err := c.ReadFromConnection(c.Conn)
+
+			request, err := s.ReadFromConnection(conn)
 			if err != nil {
-				if errors.Is(err, io.EOF) {
-					return
-				}
 				log.Println(err)
+				continue
 			}
-			log.Println("handling in gouroutine", no)
-			log.Println(c.HandleRequest(request))
+			newClient := &Client{
+				Conn:  conn,
+				VmcNo: request.VmcNo,
+			}
+
+			if val, ok := s.TCPClients[newClient.VmcNo]; ok {
+				val.done <- struct{}{}
+			}
+			s.TCPClients[newClient.VmcNo] = newClient
+			log.Println(newClient.HandleRequest(request))
 		}
 	}
 }
 
-func (s *Client) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
+func (s *Server) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
