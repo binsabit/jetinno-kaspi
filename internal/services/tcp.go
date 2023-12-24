@@ -95,32 +95,33 @@ func (s *Server) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	return &req, nil
 }
 
-func (c *Client) Write(content *Request) error {
+func (c *Client) Write(content ...*Request) error {
 
-	if content == nil {
-		return nil
-	}
 	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", c.VmcNo), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		log.Printf("Error while opening file %v\n", err)
 		return err
 	}
-	bytes, err := sonic.Marshal(content)
-	if err != nil {
-		log.Printf("Error while marshling json, %v\n", err)
-		return err
+	for _, val := range content {
+
+		bytes, err := sonic.Marshal(val)
+		if err != nil {
+			log.Printf("Error while marshling json, %v\n", err)
+			return err
+		}
+
+		log.Println(string(bytes))
+		bytesWritten, err := file.Write(bytes)
+		if err != nil {
+			log.Printf("Error while writing to file %v\n", err)
+			return err
+		}
+		if bytesWritten == 0 {
+			log.Printf("No content in connection: ClientID:%d", c.VmcNo)
+			return err
+		}
+		_, _ = file.Write([]byte("\n"))
 	}
-	log.Println(string(bytes))
-	bytesWritten, err := file.Write(bytes)
-	if err != nil {
-		log.Printf("Error while writing to file %v\n", err)
-		return err
-	}
-	if bytesWritten == 0 {
-		log.Printf("No content in connection: ClientID:%d", c.VmcNo)
-		return err
-	}
-	_, _ = file.Write([]byte("\n"))
 	return nil
 }
 
