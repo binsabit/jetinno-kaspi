@@ -8,15 +8,15 @@ import (
 	"github.com/bytedance/sonic"
 	"io"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 )
 
 type Client struct {
-	VmcNo int64
-	Conn  *net.TCPConn
-	done  chan struct{}
+	VmcNo  int64
+	Conn   *net.TCPConn
+	Server *Server
+	done   chan struct{}
 }
 
 type Request struct {
@@ -54,7 +54,6 @@ func (s *Server) RunTCPServer() {
 			log.Println(err)
 			continue
 		}
-
 		newClient := &Client{
 			Conn:  conn,
 			VmcNo: 1,
@@ -70,13 +69,11 @@ func (s *Server) RunTCPServer() {
 		}
 		s.TCPClients[newClient.VmcNo] = newClient
 
-		log.Println("handling command in goroutine")
 		go newClient.ListenConnection()
 	}
 }
 
 func (c *Client) ListenConnection() {
-	no := rand.Int63()
 	for {
 		select {
 		case <-c.done:
@@ -89,7 +86,6 @@ func (c *Client) ListenConnection() {
 				}
 				log.Println(err)
 			}
-			log.Println("handling in gouroutine", no)
 			log.Println(c.HandleRequest(request))
 		}
 	}
@@ -121,7 +117,6 @@ func (c *Client) Write(content *Request) error {
 	if content == nil {
 		return nil
 	}
-
 	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", c.VmcNo), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		log.Printf("Error while opening file %v\n", err)
@@ -132,6 +127,7 @@ func (c *Client) Write(content *Request) error {
 		log.Printf("Error while marshling json, %v\n", err)
 		return err
 	}
+	log.Println(string(bytes))
 	bytesWritten, err := file.Write(bytes)
 	if err != nil {
 		log.Printf("Error while writing to file %v\n", err)
