@@ -87,7 +87,7 @@ func (c *Client) ListenConnection() {
 			request, err := c.ReadFromConnection(c.Conn)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
-					return
+					continue
 				}
 				log.Println(err)
 			}
