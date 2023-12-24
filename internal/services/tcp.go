@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 )
 
 type Client struct {
@@ -32,7 +33,7 @@ type Request struct {
 	Carrier_Code   *string           `json:"carrier_code,omitempty"`
 	Date_Time      *string           `json:"date_time,omitempty"`
 	Server_List    *string           `json:"server_list,omitempty"`
-	Ret            *string           `json:"ret,omitempty"`
+	Ret            *int              `json:"ret,omitempty"`
 	Status         *string           `json:"status,omitempty"`
 	Supply         map[string]string `json:"supply,omitempty"`
 	Time           *string           `json:"time,omitempty"`
@@ -131,6 +132,7 @@ func (c *Client) HandleRequest(request *Request) error {
 	case pkg.COMMAND_HEARDBEAT:
 	case pkg.COMMAND_ERROR_REQUEST:
 	case pkg.COMMAND_LOGIN_REQUEST:
+		return c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
 	case pkg.COMMAND_QR_REQUEST:
 	case pkg.COMMAND_CHECKORDER_REQUEST:
@@ -138,4 +140,31 @@ func (c *Client) HandleRequest(request *Request) error {
 	default:
 	}
 	return c.Write(request)
+}
+
+func (c *Client) Login(request *Request) error {
+	carrierCode := "TW-00418"
+	dateTime := time.Now().Format(time.DateTime)
+	serverlist := "185.100.67.252"
+	ret := 0
+	response := Request{
+		VmcNo:        request.VmcNo,
+		Command:      pkg.COMMAND_LOGIN_RESPONSE,
+		Carrier_Code: &carrierCode,
+		Date_Time:    &dateTime,
+		Server_List:  &serverlist,
+		Ret:          &ret,
+	}
+	data, err := sonic.ConfigFastest.Marshal(response)
+	if err != nil {
+		return err
+	}
+	bs := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bs, uint32(len(data))+4)
+	data = append(bs, data...)
+	_, err = c.Conn.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
