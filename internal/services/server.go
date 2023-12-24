@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"net"
+	"sync"
 	"sync/atomic"
 )
 
@@ -20,6 +21,7 @@ type Server struct {
 	HTTPServer *fiber.App
 	connChan   chan *net.TCPConn
 	doneChan   chan struct{}
+	mutex      sync.Mutex
 	Database   *db.Database
 }
 

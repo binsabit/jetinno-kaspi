@@ -10,11 +10,9 @@ import (
 	"log"
 	"net"
 	"os"
-	"sync"
 )
 
 type Client struct {
-	sync.RWMutex
 	VmcNo  int64
 	Conn   *net.TCPConn
 	Server *Server
@@ -80,12 +78,12 @@ func (c *Client) ListenConnection() {
 				log.Println(err)
 			}
 			c.VmcNo = request.VmcNo
-			c.Lock()
+			c.Server.mutex.Lock()
 			if val, ok := c.Server.TCPClients[request.VmcNo]; ok {
 				val.done <- struct{}{}
 			}
 			c.Server.TCPClients[c.VmcNo] = c
-			c.Unlock()
+			c.Server.mutex.Unlock()
 			log.Println(c.HandleRequest(request))
 		}
 	}
