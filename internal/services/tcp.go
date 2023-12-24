@@ -77,6 +77,10 @@ func (c *Client) ListenConnection() {
 				log.Println(err)
 			}
 			c.VmcNo = request.VmcNo
+			if val, ok := c.Server.TCPClients[request.VmcNo]; ok {
+				val.done <- struct{}{}
+			}
+
 			c.Server.TCPClients[c.VmcNo] = c
 			log.Println(c.HandleRequest(request))
 		}
