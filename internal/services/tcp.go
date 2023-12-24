@@ -54,42 +54,26 @@ func (s *Server) RunTCPServer() {
 			log.Println(err)
 			continue
 		}
+		request, err := s.ReadFromConnection(conn)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return
+			}
+			log.Println(err)
+		}
 		newClient := &Client{
 			Conn:   conn,
 			done:   make(chan struct{}),
 			Server: s,
-			VmcNo:  1,
+			VmcNo:  request.VmcNo,
 		}
-		go newClient.ListenConnection()
+		s.TCPClients[request.VmcNo] = newClient
+
+		go log.Println(newClient.HandleRequest(request))
 	}
 }
 
-func (c *Client) ListenConnection() {
-	for {
-		select {
-		case <-c.done:
-			return
-		default:
-			request, err := c.ReadFromConnection(c.Conn)
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					return
-				}
-				log.Println(err)
-			}
-			c.VmcNo = request.VmcNo
-			c.Server.mutex.Lock()
-			if val, ok := c.Server.TCPClients[request.VmcNo]; ok {
-				val.done <- struct{}{}
-			}
-			c.Server.TCPClients[c.VmcNo] = c
-			c.Server.mutex.Unlock()
-			log.Println(c.HandleRequest(request))
-		}
-	}
-}
-
-func (s *Client) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
+func (s *Server) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
