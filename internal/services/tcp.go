@@ -58,17 +58,6 @@ func (s *Server) RunTCPServer() {
 			Conn:  conn,
 			VmcNo: 1,
 		}
-		request, err := newClient.ReadFromConnection(conn)
-		if err != nil {
-			log.Println(err)
-		}
-
-		newClient.VmcNo = request.VmcNo
-		if val, ok := s.TCPClients[newClient.VmcNo]; ok {
-			val.done <- struct{}{}
-		}
-		s.TCPClients[newClient.VmcNo] = newClient
-
 		go newClient.ListenConnection()
 	}
 }
@@ -86,6 +75,8 @@ func (c *Client) ListenConnection() {
 				}
 				log.Println(err)
 			}
+			c.VmcNo = request.VmcNo
+			c.Server.TCPClients[c.VmcNo] = c
 			log.Println(c.HandleRequest(request))
 		}
 	}
