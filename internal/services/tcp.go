@@ -2,9 +2,11 @@ package services
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -84,6 +86,9 @@ func (c *Client) ListenConnection() {
 		default:
 			request, err := c.ReadFromConnection(c.Conn)
 			if err != nil {
+				if errors.Is(err, io.EOF) {
+					return
+				}
 				log.Println(err)
 			}
 			log.Println(c.HandleRequest(request))
