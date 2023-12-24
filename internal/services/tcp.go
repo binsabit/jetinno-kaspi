@@ -73,7 +73,10 @@ func (s *Server) RunTCPServer() {
 		}
 		s.TCPClients[newClient.VmcNo] = newClient
 
-		err = newClient.HandleRequest(request)
+		go func() {
+			err = newClient.HandleRequest(request)
+			log.Println("handling command in goroutine")
+		}()
 		go newClient.ListenConnection()
 	}
 }
@@ -111,7 +114,6 @@ func (s *Client) ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println(string(buffer[8:n]))
 	var req Request
 	err = sonic.ConfigFastest.Unmarshal(buffer[8:n], &req)
 	if err != nil {
