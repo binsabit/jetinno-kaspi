@@ -72,11 +72,8 @@ func (s *Server) RunTCPServer() {
 			val.done <- struct{}{}
 		}
 		s.TCPClients[newClient.VmcNo] = newClient
-
-		go func() {
-			err = newClient.HandleRequest(request)
-			log.Println("handling command in goroutine")
-		}()
+		err = newClient.HandleRequest(request)
+		log.Println("handling command in goroutine")
 		go newClient.ListenConnection()
 	}
 }
@@ -135,6 +132,7 @@ func (c *Client) Write(content *Request) error {
 	}
 	bytes, err := sonic.Marshal(content)
 	if err != nil {
+		log.Printf("Error while marshling json, %v\n", err)
 		return err
 	}
 	bytesWritten, err := file.Write(bytes)
