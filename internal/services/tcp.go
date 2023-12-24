@@ -8,6 +8,7 @@ import (
 	"github.com/bytedance/sonic"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 )
@@ -78,7 +79,7 @@ func (s *Server) RunTCPServer() {
 }
 
 func (c *Client) ListenConnection() {
-
+	no := rand.Int63()
 	for {
 		select {
 		case <-c.done:
@@ -87,10 +88,11 @@ func (c *Client) ListenConnection() {
 			request, err := c.ReadFromConnection(c.Conn)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
-					continue
+					return
 				}
 				log.Println(err)
 			}
+			log.Println("handling in gouroutine", no)
 			log.Println(c.HandleRequest(request))
 		}
 	}
