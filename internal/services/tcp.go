@@ -178,7 +178,7 @@ func (c *Client) HandleRequest(request *Request) error {
 		response = c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
 	case pkg.COMMAND_QR_REQUEST:
-
+		response = c.QR(request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	default:
@@ -191,8 +191,12 @@ func (c *Client) HB(request *Request) error {
 	return nil
 }
 
-func (c *Client) QR(request *Request) error {
-	return nil
+func (c *Client) QR(request *Request) Request {
+	response := Request{
+		VmcNo:   request.VmcNo,
+		Command: pkg.COMMAND_QR_RESPONSE,
+	}
+	return response
 }
 
 func (c *Client) Login(request *Request) Request {
