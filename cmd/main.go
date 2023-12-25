@@ -16,7 +16,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	go server.RunTCPServer()
+	go server.TCPServer.RunTCPServer()
 
 	log.Fatal(server.RunHTTPServer("3000"))
 }

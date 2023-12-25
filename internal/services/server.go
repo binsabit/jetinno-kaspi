@@ -16,13 +16,23 @@ import (
 var clientCount atomic.Int32
 
 type Server struct {
-	TCPServer  *net.TCPListener
-	TCPClients map[int64]*Client
+	TCPServer  *TCPServer
 	HTTPServer *fiber.App
-	connChan   chan *net.TCPConn
-	doneChan   chan struct{}
-	mutex      sync.Mutex
 	Database   *db.Database
+}
+
+type TCPServer struct {
+	Listener *net.TCPListener
+	Clients  *sync.Map
+	ConnChan chan *net.TCPConn
+	MsgChan  chan *Message
+	DoneChan chan struct{}
+	sync.Mutex
+}
+
+type Message struct {
+	Client  *Client
+	Request Request
 }
 
 func NewServer(TCPPort string) (*Server, error) {
@@ -49,10 +59,15 @@ func NewServer(TCPPort string) (*Server, error) {
 	}
 
 	return &Server{
-		TCPServer:  tcpListener,
-		TCPClients: make(map[int64]*Client),
+		TCPServer: &TCPServer{
+			Listener: tcpListener,
+			Clients:  &sync.Map{},
+			ConnChan: make(chan *net.TCPConn, 1000),
+			MsgChan:  make(chan *Message),
+			DoneChan: make(chan struct{}),
+			Mutex:    sync.Mutex{},
+		},
 		HTTPServer: httpListener,
 		Database:   database,
-		connChan:   make(chan *net.TCPConn, 100),
 	}, nil
 }
