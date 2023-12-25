@@ -65,7 +65,7 @@ func (t *TCPServer) RunTCPServer() {
 			}
 			client.VmcNo = request.VmcNo
 			if val, ok := t.Clients.Load(request.VmcNo); ok {
-				val.(Client).done <- struct{}{}
+				val.(*Client).done <- struct{}{}
 			}
 			t.Clients.Store(request.VmcNo, conn)
 			go func() {
