@@ -14,7 +14,7 @@ var (
 const (
 	COMMAND_HEARDBEAT              = "hb"
 	COMMAND_QR_REQUEST             = "qrcode"
-	COMMAND_QR_RESPONSE            = "qrcode_"
+	COMMAND_QR_RESPONSE            = "qrcode_r"
 	COMMAND_LOGIN_REQUEST          = "login"
 	COMMAND_LOGIN_RESPONSE         = "login_r"
 	COMMAND_MACHINESTATUS_REQUEST  = "machinestatus"
