@@ -71,7 +71,7 @@ func (t *TCPServer) RunTCPServer() {
 			go func() {
 				err := client.HandleRequest(request)
 				if err != nil {
-					log.Printf("handle command %s client:%d\n", request.Command, request.VmcNo)
+					log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
 				}
 			}()
 			go client.ReadContinuouslyFromConnection()
@@ -97,7 +97,8 @@ func (c *Client) ReadContinuouslyFromConnection() {
 			}
 			err = c.HandleRequest(request)
 			if err != nil {
-				log.Printf("handle command %s client:%d\n", request.Command, request.VmcNo)
+				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
+				return
 			}
 		}
 	}
