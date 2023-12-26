@@ -74,12 +74,12 @@ func (t *TCPServer) RunTCPServer() {
 				val.(*Client).done <- struct{}{}
 			}
 			t.Clients.Store(request.VmcNo, client)
-			go func() {
-				err := client.HandleRequest(request)
+			go func(req Request) {
+				err := client.HandleRequest(req)
 				if err != nil {
 					log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
 				}
-			}()
+			}(*request)
 			go client.ReadContinuouslyFromConnection()
 		}
 	}
@@ -101,7 +101,10 @@ func (c *Client) ReadContinuouslyFromConnection() {
 				log.Println(err)
 				return
 			}
-			err = c.HandleRequest(request)
+			if request == nil {
+				continue
+			}
+			err = c.HandleRequest(*request)
 			if err != nil {
 				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
 				return
@@ -142,7 +145,7 @@ func (c *Client) ReadFromConnection() (*Request, error) {
 	return &req, nil
 }
 
-func (c *Client) Write(content ...*Request) error {
+func (c *Client) Write(content ...Request) error {
 
 	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", c.VmcNo), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
@@ -172,10 +175,8 @@ func (c *Client) Write(content ...*Request) error {
 	return nil
 }
 
-func (c *Client) HandleRequest(request *Request) error {
-	if request == nil {
-		return fmt.Errorf("request is empty")
-	}
+func (c *Client) HandleRequest(request Request) error {
+
 	var response Request
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
@@ -190,18 +191,18 @@ func (c *Client) HandleRequest(request *Request) error {
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	default:
 	}
-	log.Println(c.Write(request, &response))
+	log.Println(c.Write(request, response))
 	return c.WriteToConn(response)
 }
 
-func (c *Client) HB(request *Request) Request {
+func (c *Client) HB(request Request) Request {
 	return Request{
 		VmcNo:   request.VmcNo,
 		Command: pkg.COMMAND_HEARDBEAT,
 	}
 }
 
-func (c *Client) QR(request *Request) Request {
+func (c *Client) QR(request Request) Request {
 	response := Request{
 		VmcNo:   request.VmcNo,
 		Command: pkg.COMMAND_QR_RESPONSE,
@@ -209,7 +210,7 @@ func (c *Client) QR(request *Request) Request {
 	return response
 }
 
-func (c *Client) Login(request *Request) Request {
+func (c *Client) Login(request Request) Request {
 	carrierCode := "TW-00418"
 	dateTime := time.Now().Format(time.DateTime)
 	serverlist := "185.100.67.252"
