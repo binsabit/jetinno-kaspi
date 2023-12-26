@@ -182,7 +182,7 @@ func (c *Client) HandleRequest(request Request) error {
 	var response Request
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
-		c.HB(request)
+		response = c.HB(request)
 	case pkg.COMMAND_ERROR_REQUEST:
 	case pkg.COMMAND_LOGIN_REQUEST:
 		response = c.Login(request)
@@ -191,7 +191,6 @@ func (c *Client) HandleRequest(request Request) error {
 		response = c.QR(request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
 	case pkg.COMMAND_PAYDONE_REQUEST:
-	default:
 	}
 	log.Println(c.Write(request, response))
 	return c.WriteToConn(response)
