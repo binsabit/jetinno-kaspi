@@ -8,12 +8,14 @@ import (
 	"github.com/bytedance/sonic"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"time"
 )
 
 type Client struct {
+	ID     int
 	VmcNo  int64
 	Conn   *net.TCPConn
 	Server *TCPServer
@@ -54,6 +56,7 @@ func (t *TCPServer) RunTCPServer() {
 		select {
 		case conn := <-t.ConnChan:
 			client := &Client{
+				ID:     rand.Int(),
 				Conn:   conn,
 				Server: t,
 				done:   make(chan struct{}),
@@ -154,7 +157,7 @@ func (c *Client) Write(content ...*Request) error {
 			return err
 		}
 
-		log.Println(string(bytes))
+		log.Println(c.ID, string(bytes))
 		bytesWritten, err := file.Write(bytes)
 		if err != nil {
 			log.Printf("Error while writing to file %v\n", err)
