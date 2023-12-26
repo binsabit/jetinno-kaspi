@@ -61,6 +61,9 @@ func (t *TCPServer) RunTCPServer() {
 			request, err := client.ReadFromConnection()
 			if err != nil {
 				log.Println(err)
+				if val, ok := t.Clients.Load(request.VmcNo); ok {
+					val.(*Client).done <- struct{}{}
+				}
 				continue
 			}
 			client.VmcNo = request.VmcNo
