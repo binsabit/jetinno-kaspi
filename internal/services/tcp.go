@@ -176,6 +176,7 @@ func (c *Client) HandleRequest(request *Request) error {
 	var response Request
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
+		c.HB(request)
 	case pkg.COMMAND_ERROR_REQUEST:
 	case pkg.COMMAND_LOGIN_REQUEST:
 		response = c.Login(request)
