@@ -102,7 +102,6 @@ func (c *Client) ReadContinuouslyFromConnection() {
 				if val, ok := c.Server.Clients.Load(request.VmcNo); ok {
 					val.(*Client).done <- struct{}{}
 				}
-				return
 			}
 			if request == nil {
 				continue
