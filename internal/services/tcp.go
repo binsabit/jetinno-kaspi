@@ -2,11 +2,9 @@ package services
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -74,46 +72,47 @@ func (t *TCPServer) RunTCPServer() {
 				val.(*Client).done <- struct{}{}
 			}
 			t.Clients.Store(request.VmcNo, client)
-			go func(req Request) {
-				err := client.HandleRequest(req)
-				if err != nil {
-					log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
-				}
-			}(*request)
-			go client.ReadContinuouslyFromConnection()
+			if request == nil {
+				continue
+			}
+
+			err = client.HandleRequest(*request)
+			if err != nil {
+				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
+			}
 		}
 	}
 }
 
-func (c *Client) ReadContinuouslyFromConnection() {
-	for {
-		select {
-		case <-c.done:
-			c.Conn.Close()
-			c.Server.Clients.Delete(c.VmcNo)
-			return
-		default:
-			request, err := c.ReadFromConnection()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					continue
-				}
-				log.Println(err)
-				if val, ok := c.Server.Clients.Load(request.VmcNo); ok {
-					val.(*Client).done <- struct{}{}
-				}
-			}
-			if request == nil {
-				continue
-			}
-			err = c.HandleRequest(*request)
-			if err != nil {
-				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
-				return
-			}
-		}
-	}
-}
+//func (c *Client) ReadContinuouslyFromConnection() {
+//	for {
+//		select {
+//		case <-c.done:
+//			c.Conn.Close()
+//			c.Server.Clients.Delete(c.VmcNo)
+//			return
+//		default:
+//			request, err := c.ReadFromConnection()
+//			if err != nil {
+//				if errors.Is(err, io.EOF) {
+//					continue
+//				}
+//				log.Println(err)
+//				if val, ok := c.Server.Clients.Load(request.VmcNo); ok {
+//					val.(*Client).done <- struct{}{}
+//				}
+//			}
+//			if request == nil {
+//				continue
+//			}
+//			err = c.HandleRequest(*request)
+//			if err != nil {
+//				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
+//				return
+//			}
+//		}
+//	}
+//}
 
 func (t *TCPServer) AcceptConnections() {
 	for {
