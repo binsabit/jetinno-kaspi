@@ -190,8 +190,11 @@ func (c *Client) HandleRequest(request *Request) error {
 	return c.WriteToConn(response)
 }
 
-func (c *Client) HB(request *Request) error {
-	return nil
+func (c *Client) HB(request *Request) Request {
+	return Request{
+		VmcNo:   request.VmcNo,
+		Command: pkg.COMMAND_HEARDBEAT,
+	}
 }
 
 func (c *Client) QR(request *Request) Request {
