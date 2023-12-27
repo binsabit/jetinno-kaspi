@@ -215,7 +215,7 @@ func (c *Client) QR(request Request) Request {
 	if err != nil {
 		log.Println(err)
 	}
-	qr := b64.URLEncoding.EncodeToString(png)
+	qr := b64.StdEncoding.EncodeToString(png)
 	response.QRCode = &qr
 	return response
 }
