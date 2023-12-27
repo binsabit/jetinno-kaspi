@@ -100,6 +100,7 @@ func (c *Client) ReadContinuouslyFromConnection() {
 				if errors.Is(err, io.EOF) {
 					continue
 				}
+				c.Conn.Close()
 				return
 			}
 			if request == nil {
