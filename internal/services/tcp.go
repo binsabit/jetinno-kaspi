@@ -208,8 +208,9 @@ func (c *Client) HB(request Request) Request {
 func (c *Client) QR(request Request) Request {
 	var png []byte
 	response := Request{
-		VmcNo:   request.VmcNo,
-		Command: pkg.COMMAND_QR_RESPONSE,
+		VmcNo:    request.VmcNo,
+		Command:  pkg.COMMAND_QR_RESPONSE,
+		Order_No: request.Order_No,
 	}
 	png, err := qrcode.Encode("53141999967389879258033215552005483843505", qrcode.Medium, 256)
 	if err != nil {
