@@ -211,6 +211,7 @@ func (c *Client) QR(request Request) Request {
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_QR_RESPONSE,
 		Order_No: request.Order_No,
+		QR_type:  request.QR_type,
 	}
 	png, err := qrcode.Encode("53141999967389879258033215552005483843505", qrcode.Medium, 256)
 	if err != nil {
