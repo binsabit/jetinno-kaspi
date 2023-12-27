@@ -221,6 +221,25 @@ func (c *Client) QR(request Request) Request {
 	response.QRCode = &qr
 	return response
 }
+func (c *Client) CheckOrder(request Request) Request {
+	var png []byte
+	done := true
+	response := Request{
+		VmcNo:    request.VmcNo,
+		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
+		Order_No: request.Order_No,
+		QR_type:  request.QR_type,
+		PayType:  request.PayType,
+		PayDone:  &done,
+	}
+	png, err := qrcode.Encode("53141999967389879258033215552005483843505", qrcode.Medium, 256)
+	if err != nil {
+		log.Println(err)
+	}
+	qr := b64.StdEncoding.EncodeToString(png)
+	response.QRCode = &qr
+	return response
+}
 
 func (c *Client) Login(request Request) Request {
 	carrierCode := "TW-00418"
