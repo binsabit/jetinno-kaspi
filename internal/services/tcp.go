@@ -101,9 +101,13 @@ func (c *Client) ReadContinuouslyFromConnection() {
 					continue
 				}
 				log.Println(err)
+				if c == nil {
+					return
+				}
 				if val, ok := c.Server.Clients.Load(request.VmcNo); ok {
 					val.(*Client).done <- struct{}{}
 				}
+				return
 			}
 			if request == nil {
 				continue
