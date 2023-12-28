@@ -55,49 +55,8 @@ func (t *TCPServer) RunTCPServer() {
 			log.Println(err)
 			continue
 		}
-		request, err := ReadFromConnection(conn)
-		if err != nil {
-			log.Println(err)
-			conn.Close()
-			continue
-		}
-		if request == nil {
-			conn.Close()
-			continue
-		}
-		client := &Client{
-			ID:     rand.Int(),
-			VmcNo:  request.VmcNo,
-			Conn:   conn,
-			Server: t,
-			done:   make(chan struct{}),
-		}
-		if val, ok := t.Clients.Load(request.VmcNo); ok {
-			val.(*Client).done <- struct{}{}
-		}
-		go client.HandleRequest(*request)
+		go t.HandleRequest(conn)
 
-	}
-}
-func (c *Client) ReadContinuouslyFromConnection() {
-	for {
-		select {
-		case <-c.done:
-			c.Conn.Close()
-			c.Server.Clients.Delete(c.VmcNo)
-			return
-		default:
-			request, err := ReadFromConnection(c.Conn)
-			if err != nil {
-				continue
-			}
-			if request == nil {
-				c.done <- struct{}{}
-				continue
-			}
-			go c.HandleRequest(*request)
-
-		}
 	}
 }
 
@@ -152,24 +111,42 @@ func (c *Client) Write(content ...Request) error {
 	return nil
 }
 
-func (c *Client) HandleRequest(request Request) {
-
+func (t *TCPServer) HandleRequest(conn *net.TCPConn) {
+	request, err := ReadFromConnection(conn)
+	if err != nil {
+		log.Println(err)
+		conn.Close()
+		return
+	}
+	if request == nil {
+		conn.Close()
+		return
+	}
+	client := &Client{
+		ID:    rand.Int(),
+		VmcNo: request.VmcNo,
+		Conn:  conn,
+		done:  make(chan struct{}),
+	}
+	if val, ok := t.Clients.Load(request.VmcNo); ok {
+		val.(*Client).done <- struct{}{}
+	}
 	var response Request
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
-		response = c.HB(request)
+		response = client.HB(*request)
 	case pkg.COMMAND_ERROR_REQUEST:
 	case pkg.COMMAND_LOGIN_REQUEST:
-		response = c.Login(request)
+		response = client.Login(*request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
 	case pkg.COMMAND_QR_REQUEST:
-		response = c.QR(request)
+		response = client.QR(*request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
-		response = c.CheckOrder(request)
+		response = client.CheckOrder(*request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	}
-	log.Println(c.Write(request, response))
-	c.WriteToConn(response)
+	log.Println(client.Write(*request, response))
+	client.WriteToConn(response)
 }
 
 func (c *Client) HB(request Request) Request {
