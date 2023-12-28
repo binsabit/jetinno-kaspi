@@ -15,7 +15,7 @@ import (
 type Client struct {
 	ID     int
 	VmcNo  int64
-	Conn   *net.TCPConn
+	Conn   net.Conn
 	Server *TCPServer
 	done   chan struct{}
 }
@@ -50,7 +50,7 @@ type Request struct {
 
 func (t *TCPServer) RunTCPServer() {
 	for {
-		conn, err := t.Listener.AcceptTCP()
+		conn, err := t.Listener.Accept()
 		if err != nil {
 			log.Println(err)
 			continue
@@ -60,7 +60,7 @@ func (t *TCPServer) RunTCPServer() {
 	}
 }
 
-func ReadFromConnection(conn *net.TCPConn) (*Request, error) {
+func ReadFromConnection(conn net.Conn) (*Request, error) {
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
@@ -111,8 +111,9 @@ func (c *Client) Write(content ...Request) error {
 	return nil
 }
 
-func (t *TCPServer) HandleRequest(conn *net.TCPConn) {
+func (t *TCPServer) HandleRequest(conn net.Conn) {
 	request, err := ReadFromConnection(conn)
+	defer conn.Close()
 	if err != nil {
 		log.Println(err)
 		conn.Close()
