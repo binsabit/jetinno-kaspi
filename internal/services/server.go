@@ -62,7 +62,7 @@ func NewServer(TCPPort string) (*Server, error) {
 		TCPServer: &TCPServer{
 			Listener: tcpListener,
 			Clients:  &sync.Map{},
-			ConnChan: make(chan *net.TCPConn, 1000),
+			ConnChan: make(chan *net.TCPConn),
 			MsgChan:  make(chan *Message),
 			DoneChan: make(chan struct{}),
 			Mutex:    sync.Mutex{},
