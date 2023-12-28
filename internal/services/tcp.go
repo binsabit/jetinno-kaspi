@@ -55,38 +55,49 @@ func (t *TCPServer) RunTCPServer() {
 	for {
 		select {
 		case conn := <-t.ConnChan:
+
+			request, err := ReadFromConnection(conn)
+			if err != nil {
+				log.Println(err)
+				conn.Close()
+				continue
+			}
+			if request == nil {
+				conn.Close()
+				continue
+			}
 			client := &Client{
 				ID:     rand.Int(),
+				VmcNo:  request.VmcNo,
 				Conn:   conn,
 				Server: t,
 				done:   make(chan struct{}),
 			}
-			request, err := client.ReadFromConnection()
-			if err != nil {
-				log.Println(err)
-				if val, ok := t.Clients.Load(request.VmcNo); ok {
-					val.(*Client).done <- struct{}{}
-				}
-				continue
-			}
-			client.VmcNo = request.VmcNo
 			if val, ok := t.Clients.Load(request.VmcNo); ok {
 				val.(*Client).done <- struct{}{}
 			}
 			t.Clients.Store(request.VmcNo, client)
-			if request == nil {
-				continue
-			}
-
 			err = client.HandleRequest(*request)
 			if err != nil {
-				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
+				t.Clients.Delete(client.VmcNo)
+				client.done <- struct{}{}
+				log.Printf("handle command %s client:%d\n err:%v\n", request.Command, request.VmcNo, err)
 			}
 			go client.ReadContinuouslyFromConnection()
 		}
 	}
 }
 
+func (t *TCPServer) AcceptConnections() {
+	for {
+		conn, err := t.Listener.AcceptTCP()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		t.ConnChan <- conn
+	}
+}
 func (c *Client) ReadContinuouslyFromConnection() {
 	for {
 		select {
@@ -95,7 +106,7 @@ func (c *Client) ReadContinuouslyFromConnection() {
 			c.Server.Clients.Delete(c.VmcNo)
 			return
 		default:
-			request, err := c.ReadFromConnection()
+			request, err := ReadFromConnection(c.Conn)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					continue
@@ -115,27 +126,16 @@ func (c *Client) ReadContinuouslyFromConnection() {
 	}
 }
 
-func (t *TCPServer) AcceptConnections() {
-	for {
-		conn, err := t.Listener.AcceptTCP()
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		t.ConnChan <- conn
-	}
-}
-
-func (c *Client) ReadFromConnection() (*Request, error) {
+func ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	buffer := make([]byte, 4)
-	n, err := c.Conn.Read(buffer)
+	n, err := conn.Read(buffer)
 	if err != nil {
 		return nil, err
 	}
 	packetSize := binary.LittleEndian.Uint32(buffer[:n])
 
 	buffer = make([]byte, packetSize-4)
-	n, err = c.Conn.Read(buffer)
+	n, err = conn.Read(buffer)
 	if err != nil {
 		return nil, err
 	}
