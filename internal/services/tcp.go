@@ -111,16 +111,18 @@ func (c *Client) ReadContinuouslyFromConnection() {
 				if errors.Is(err, io.EOF) {
 					continue
 				}
-				c.Conn.Close()
-				return
+				c.done <- struct{}{}
+				continue
 			}
 			if request == nil {
+				c.done <- struct{}{}
 				continue
 			}
 			err = c.HandleRequest(*request)
 			if err != nil {
 				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
-				return
+				c.done <- struct{}{}
+				continue
 			}
 		}
 	}
@@ -251,7 +253,7 @@ func (c *Client) WriteToConn(response Request) error {
 		return err
 	}
 	bs := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bs, uint32(len(data))+4)
+	binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
 	data = append(bs, data...)
 	_, err = c.Conn.Write(data)
 	if err != nil {
