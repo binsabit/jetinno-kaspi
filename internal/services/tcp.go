@@ -75,14 +75,8 @@ func (t *TCPServer) RunTCPServer() {
 		if val, ok := t.Clients.Load(request.VmcNo); ok {
 			val.(*Client).done <- struct{}{}
 		}
-		err = client.HandleRequest(*request)
-		if err != nil {
-			t.Clients.Delete(client.VmcNo)
-			client.done <- struct{}{}
-			log.Printf("handle command %s client:%d\n err:%v\n", request.Command, request.VmcNo, err)
-			continue
-		}
-		t.Clients.Store(request.VmcNo, client)
+		go client.HandleRequest(*request)
+
 	}
 }
 func (c *Client) ReadContinuouslyFromConnection() {
@@ -101,12 +95,8 @@ func (c *Client) ReadContinuouslyFromConnection() {
 				c.done <- struct{}{}
 				continue
 			}
-			err = c.HandleRequest(*request)
-			if err != nil {
-				log.Printf("handle command %s client:%d\n err:%v", request.Command, request.VmcNo, err)
-				c.done <- struct{}{}
-				continue
-			}
+			go c.HandleRequest(*request)
+
 		}
 	}
 }
@@ -162,7 +152,7 @@ func (c *Client) Write(content ...Request) error {
 	return nil
 }
 
-func (c *Client) HandleRequest(request Request) error {
+func (c *Client) HandleRequest(request Request) {
 
 	var response Request
 	switch request.Command {
@@ -179,7 +169,7 @@ func (c *Client) HandleRequest(request Request) error {
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	}
 	log.Println(c.Write(request, response))
-	return c.WriteToConn(response)
+	c.WriteToConn(response)
 }
 
 func (c *Client) HB(request Request) Request {
