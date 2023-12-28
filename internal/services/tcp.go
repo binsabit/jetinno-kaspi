@@ -73,15 +73,15 @@ func (t *TCPServer) RunTCPServer() {
 				Server: t,
 				done:   make(chan struct{}),
 			}
+			if val, ok := t.Clients.Load(request.VmcNo); ok {
+				val.(*Client).done <- struct{}{}
+			}
 			err = client.HandleRequest(*request)
 			if err != nil {
 				t.Clients.Delete(client.VmcNo)
 				client.done <- struct{}{}
 				log.Printf("handle command %s client:%d\n err:%v\n", request.Command, request.VmcNo, err)
 				continue
-			}
-			if val, ok := t.Clients.Load(request.VmcNo); ok {
-				val.(*Client).done <- struct{}{}
 			}
 			t.Clients.Store(request.VmcNo, client)
 			go client.ReadContinuouslyFromConnection()
@@ -110,6 +110,7 @@ func (c *Client) ReadContinuouslyFromConnection() {
 			request, err := ReadFromConnection(c.Conn)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
+					log.Println(err)
 					continue
 				}
 				c.done <- struct{}{}
