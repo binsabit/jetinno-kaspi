@@ -82,7 +82,7 @@ func (t *TCPServer) RunTCPServer() {
 				continue
 			}
 			t.Clients.Store(request.VmcNo, client)
-			go client.ReadContinuouslyFromConnection()
+			//go client.ReadContinuouslyFromConnection()
 		}
 	}
 }
