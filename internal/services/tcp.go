@@ -56,7 +56,7 @@ func (t *TCPServer) RunTCPServer() {
 		case <-ticker:
 			t.Clients.Range(func(k, v any) bool {
 				log.Println(k, v)
-				return false
+				return true
 			})
 		case conn := <-t.ConnChan:
 
