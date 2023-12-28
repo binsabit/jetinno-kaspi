@@ -258,10 +258,8 @@ func (c *Client) WriteToConn(response Request) error {
 		return err
 	}
 	bs := make([]byte, 4)
-	padding := "y0000000"
-	binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
-	temp := append(bs, []byte(padding)...)
-	data = append(temp, data...)
+	binary.LittleEndian.PutUint32(bs, uint32(len(data))+4)
+	data = append(bs, data...)
 	_, err = c.Conn.Write(data)
 	if err != nil {
 		return err
