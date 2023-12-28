@@ -2,11 +2,9 @@ package services
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -109,10 +107,7 @@ func (c *Client) ReadContinuouslyFromConnection() {
 		default:
 			request, err := ReadFromConnection(c.Conn)
 			if err != nil {
-				if errors.Is(err, io.EOF) {
-					log.Println(err)
-					continue
-				}
+				log.Println(err)
 				c.done <- struct{}{}
 				continue
 			}
