@@ -50,14 +50,8 @@ type Request struct {
 
 func (t *TCPServer) RunTCPServer() {
 	go t.AcceptConnections()
-	ticker := time.Tick(5 * time.Second)
 	for {
 		select {
-		case <-ticker:
-			t.Clients.Range(func(k, v any) bool {
-				log.Println(k, v)
-				return true
-			})
 		case conn := <-t.ConnChan:
 
 			request, err := ReadFromConnection(conn)
