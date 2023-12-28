@@ -1,13 +1,11 @@
 package services
 
 import (
-	b64 "encoding/base64"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"github.com/skip2/go-qrcode"
 	"io"
 	"log"
 	"math/rand"
@@ -207,18 +205,13 @@ func (c *Client) HB(request Request) Request {
 }
 
 func (c *Client) QR(request Request) Request {
-	var png []byte
 	response := Request{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_QR_RESPONSE,
 		Order_No: request.Order_No,
 		QR_type:  request.QR_type,
 	}
-	png, err := qrcode.Encode("53141999967389879258033215552005483843505", qrcode.Medium, 128)
-	if err != nil {
-		log.Println(err)
-	}
-	qr := b64.StdEncoding.EncodeToString(png)
+	qr := "53141999967389879258033215552005483843505"
 	response.QRCode = &qr
 	return response
 }
