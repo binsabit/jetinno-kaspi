@@ -49,52 +49,40 @@ type Request struct {
 }
 
 func (t *TCPServer) RunTCPServer() {
-	go t.AcceptConnections()
-	for {
-		select {
-		case conn := <-t.ConnChan:
-
-			request, err := ReadFromConnection(conn)
-			if err != nil {
-				log.Println(err)
-				conn.Close()
-				continue
-			}
-			if request == nil {
-				conn.Close()
-				continue
-			}
-			client := &Client{
-				ID:     rand.Int(),
-				VmcNo:  request.VmcNo,
-				Conn:   conn,
-				Server: t,
-				done:   make(chan struct{}),
-			}
-			if val, ok := t.Clients.Load(request.VmcNo); ok {
-				val.(*Client).done <- struct{}{}
-			}
-			err = client.HandleRequest(*request)
-			if err != nil {
-				t.Clients.Delete(client.VmcNo)
-				client.done <- struct{}{}
-				log.Printf("handle command %s client:%d\n err:%v\n", request.Command, request.VmcNo, err)
-				continue
-			}
-			t.Clients.Store(request.VmcNo, client)
-			//go client.ReadContinuouslyFromConnection()
-		}
-	}
-}
-
-func (t *TCPServer) AcceptConnections() {
 	for {
 		conn, err := t.Listener.AcceptTCP()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		t.ConnChan <- conn
+		request, err := ReadFromConnection(conn)
+		if err != nil {
+			log.Println(err)
+			conn.Close()
+			continue
+		}
+		if request == nil {
+			conn.Close()
+			continue
+		}
+		client := &Client{
+			ID:     rand.Int(),
+			VmcNo:  request.VmcNo,
+			Conn:   conn,
+			Server: t,
+			done:   make(chan struct{}),
+		}
+		if val, ok := t.Clients.Load(request.VmcNo); ok {
+			val.(*Client).done <- struct{}{}
+		}
+		err = client.HandleRequest(*request)
+		if err != nil {
+			t.Clients.Delete(client.VmcNo)
+			client.done <- struct{}{}
+			log.Printf("handle command %s client:%d\n err:%v\n", request.Command, request.VmcNo, err)
+			continue
+		}
+		t.Clients.Store(request.VmcNo, client)
 	}
 }
 func (c *Client) ReadContinuouslyFromConnection() {
