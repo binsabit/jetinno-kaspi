@@ -82,6 +82,7 @@ func (t *TCPServer) RunTCPServer() {
 				t.Clients.Delete(client.VmcNo)
 				client.done <- struct{}{}
 				log.Printf("handle command %s client:%d\n err:%v\n", request.Command, request.VmcNo, err)
+				continue
 			}
 			go client.ReadContinuouslyFromConnection()
 		}
