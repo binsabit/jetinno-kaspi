@@ -107,8 +107,6 @@ func (c *Client) ReadContinuouslyFromConnection() {
 		default:
 			request, err := ReadFromConnection(c.Conn)
 			if err != nil {
-				log.Println(err)
-				c.done <- struct{}{}
 				continue
 			}
 			if request == nil {
