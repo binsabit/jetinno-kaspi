@@ -192,6 +192,7 @@ func (c *Client) HandleRequest(request Request) error {
 	case pkg.COMMAND_QR_REQUEST:
 		response = c.QR(request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
+		response = c.CheckOrder(request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	}
 	log.Println(c.Write(request, response))
@@ -213,7 +214,7 @@ func (c *Client) QR(request Request) Request {
 		Order_No: request.Order_No,
 		QR_type:  request.QR_type,
 	}
-	png, err := qrcode.Encode("53141999967389879258033215552005483843505", qrcode.Medium, 256)
+	png, err := qrcode.Encode("53141999967389879258033215552005483843505", qrcode.Medium, 128)
 	if err != nil {
 		log.Println(err)
 	}
@@ -222,7 +223,6 @@ func (c *Client) QR(request Request) Request {
 	return response
 }
 func (c *Client) CheckOrder(request Request) Request {
-	var png []byte
 	done := true
 	response := Request{
 		VmcNo:    request.VmcNo,
@@ -232,12 +232,7 @@ func (c *Client) CheckOrder(request Request) Request {
 		PayType:  request.PayType,
 		PayDone:  &done,
 	}
-	png, err := qrcode.Encode("53141999967389879258033215552005483843505", qrcode.Medium, 256)
-	if err != nil {
-		log.Println(err)
-	}
-	qr := b64.StdEncoding.EncodeToString(png)
-	response.QRCode = &qr
+
 	return response
 }
 
