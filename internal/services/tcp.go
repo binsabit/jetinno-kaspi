@@ -71,9 +71,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		var req Request
 		packetSize := binary.LittleEndian.Uint32(buffer[:4])
 
-		buffer = make([]byte, packetSize-4)
+		buffer = buffer[packetSize:]
 
-		err := sonic.ConfigFastest.Unmarshal(buffer[7:], &req)
+		err := sonic.ConfigFastest.Unmarshal(buffer[8:], &req)
 		if err != nil {
 			log.Println(err)
 			continue
