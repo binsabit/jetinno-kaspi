@@ -9,7 +9,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -68,14 +67,11 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		var req Request
-		length, err := strconv.Atoi(string(text[0]))
-		if err != nil {
-			log.Println(err)
-			continue
-		}
+		log.Println(text[:4])
+		length := binary.BigEndian.Uint32([]byte(text[:4])[:4])
 		log.Println([]byte(text), len(text), length)
 
-		err = sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
+		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
 		if err != nil {
 			log.Println(err)
 			continue
