@@ -164,7 +164,7 @@ func (c *Client) QR(request Request) Request {
 		Order_No: request.Order_No,
 		QR_type:  request.QR_type,
 	}
-	qr := "53141999967389879258033215552005483843505"
+	qr := "weixin://wxpay/bizpayurl?pr=jWRhupP"
 	response.QRCode = &qr
 	return response
 }
