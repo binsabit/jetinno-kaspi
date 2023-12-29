@@ -67,6 +67,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	for scanner.Scan() {
 		buffer := scanner.Bytes()
 		log.Println(buffer)
+		log.Println(string(buffer))
 		var req Request
 		packetSize := binary.LittleEndian.Uint32(buffer[:4])
 
