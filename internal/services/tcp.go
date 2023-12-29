@@ -68,7 +68,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		text := scanner.Text()
 		var req Request
 
-		log.Println([]byte(text))
+		log.Println([]byte(text), len(text))
 		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
 		if err != nil {
 			log.Println(err)
