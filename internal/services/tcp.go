@@ -64,14 +64,9 @@ func (t *TCPServer) RunTCPServer() {
 }
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
-	reader := bufio.NewReader(conn)
-	for {
-		request, err := reader.ReadString('\n')
-
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		request := scanner.Text()
 		log.Println(request)
 	}
 }
