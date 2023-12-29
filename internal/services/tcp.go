@@ -68,7 +68,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		var req Request
-		length, err := strconv.Atoi(text[:4])
+		length, err := strconv.Atoi(string(text[0]))
 		if err != nil {
 			log.Println(err)
 			continue
