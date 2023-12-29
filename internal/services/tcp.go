@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bufio"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -50,7 +51,7 @@ type Request struct {
 	PayDone        *bool             `json:"paydone,omitempty"`
 }
 
-func (t *TCPServer) AcceptConnection() {
+func (t *TCPServer) RunTCPServer() {
 	for {
 		conn, err := t.Listener.AcceptTCP()
 		if err != nil {
@@ -58,19 +59,23 @@ func (t *TCPServer) AcceptConnection() {
 			continue
 		}
 		conn.SetKeepAlive(true)
-		t.ConnChan <- conn
+		go t.HandleConnection(conn)
 	}
 }
 
-func (t *TCPServer) RunTCPServer() {
-	go t.AcceptConnection()
+func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
+	reader := bufio.NewReader(conn)
 	for {
-		select {
-		case conn := <-t.ConnChan:
-			go t.ReadContinuouslyFromConnection(conn)
+		request, err := reader.ReadString('\n')
+
+		if err != nil {
+			log.Println(err)
+			return
 		}
+		log.Println(request)
 	}
 }
+
 func (t *TCPServer) ReadContinuouslyFromConnection(conn *net.TCPConn) {
 	for {
 		request, err := ReadFromConnection(conn)
@@ -101,6 +106,10 @@ func ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	n, err := conn.Read(buffer)
 	if err != nil {
 		return nil, err
+	}
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+
 	}
 	packetSize := binary.LittleEndian.Uint32(buffer[:n])
 
