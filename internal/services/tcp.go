@@ -2,9 +2,11 @@ package services
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
+	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -74,6 +76,9 @@ func (t *TCPServer) ReadContinuouslyFromConnection(conn *net.TCPConn) {
 		request, err := ReadFromConnection(conn)
 		if err != nil {
 			log.Println(err)
+			if errors.Is(err, io.EOF) {
+				continue
+			}
 			return
 		}
 		if request == nil {
