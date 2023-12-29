@@ -66,22 +66,23 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	defer conn.Close()
 	for scanner.Scan() {
 		text := scanner.Text()
-		//var req Request
+		var req Request
 		log.Println(text[:4])
 		length := binary.BigEndian.Uint32([]byte(text[:4]))
 		log.Println([]byte(text), len(text), length)
 
-		//err := sonic.ConfigFastest.Unmarshal([]byte(text[7:]), &req)
-		//if err != nil {
-		//	log.Println(err)
-		//	continue
-		//}
-		//client := &Client{
-		//	VmcNo:  req.VmcNo,
-		//	Conn:   conn,
-		//	Server: t,
-		//}
-		//t.Clients.Store(req.VmcNo, client)
+		err := sonic.ConfigFastest.Unmarshal([]byte(text[11:]), &req)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		client := &Client{
+			VmcNo:  req.VmcNo,
+			Conn:   conn,
+			Server: t,
+		}
+		t.Clients.Store(req.VmcNo, client)
+		log.Println(req)
 		//
 		//response := client.HandleRequest(req)
 		//data, err := sonic.ConfigFastest.Marshal(response)
