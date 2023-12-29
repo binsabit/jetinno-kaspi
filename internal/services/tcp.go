@@ -62,43 +62,43 @@ func (t *TCPServer) RunTCPServer() {
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	scanner := bufio.NewScanner(conn)
-	writer := bufio.NewWriter(conn)
+	//writer := bufio.NewWriter(conn)
 	defer conn.Close()
 	for scanner.Scan() {
 		text := scanner.Text()
-		var req Request
+		//var req Request
 		log.Println(text)
 		length := binary.BigEndian.Uint64([]byte(text[:4]))
 		log.Println([]byte(text), len(text), length)
 
-		err := sonic.ConfigFastest.Unmarshal([]byte(text[7:]), &req)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		client := &Client{
-			VmcNo:  req.VmcNo,
-			Conn:   conn,
-			Server: t,
-		}
-		t.Clients.Store(req.VmcNo, client)
-
-		response := client.HandleRequest(req)
-		data, err := sonic.ConfigFastest.Marshal(response)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		bs := make([]byte, 4)
-		padding := "000A0000000"
-		binary.LittleEndian.PutUint32(bs, uint32(len(data))+15)
-		data = append(bs, append([]byte(padding), data...)...)
-		n, err := writer.Write(data)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		log.Printf("read %s \n %d - bytes written; msg: %s", text, n, string(data))
+		//err := sonic.ConfigFastest.Unmarshal([]byte(text[7:]), &req)
+		//if err != nil {
+		//	log.Println(err)
+		//	continue
+		//}
+		//client := &Client{
+		//	VmcNo:  req.VmcNo,
+		//	Conn:   conn,
+		//	Server: t,
+		//}
+		//t.Clients.Store(req.VmcNo, client)
+		//
+		//response := client.HandleRequest(req)
+		//data, err := sonic.ConfigFastest.Marshal(response)
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
+		//bs := make([]byte, 4)
+		//padding := "000A0000000"
+		//binary.LittleEndian.PutUint32(bs, uint32(len(data))+15)
+		//data = append(bs, append([]byte(padding), data...)...)
+		//n, err := writer.Write(data)
+		//if err != nil {
+		//	log.Println(err)
+		//	continue
+		//}
+		//log.Printf("read %s \n %d - bytes written; msg: %s", text, n, string(data))
 	}
 }
 
