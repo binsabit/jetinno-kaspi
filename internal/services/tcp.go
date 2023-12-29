@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -65,13 +66,13 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	writer := bufio.NewWriter(conn)
 	defer conn.Close()
 	for scanner.Scan() {
-		buffer := scanner.Bytes()
+		buffer := scanner.Text()
 		log.Println(buffer)
 		log.Println(string(buffer))
 		var req Request
-		buffer = buffer[4:]
+		text := "{" + strings.TrimLeft(strings.TrimRight(buffer, "}"), "{") + "}"
 
-		err := sonic.ConfigFastest.Unmarshal(buffer[8:], &req)
+		err := sonic.ConfigFastest.Unmarshal([]byte(text), &req)
 		if err != nil {
 			log.Println(err)
 			continue
