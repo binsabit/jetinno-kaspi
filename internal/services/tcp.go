@@ -68,7 +68,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		text := scanner.Text()
 		var req Request
 		log.Println(text[:4])
-		length := binary.BigEndian.Uint32([]byte(text[:4]))
+		length := binary.BigEndian.Uint16([]byte(text[:2]))
 		log.Println([]byte(text), len(text), length)
 
 		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
