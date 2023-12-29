@@ -66,7 +66,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	defer conn.Close()
 	for scanner.Scan() {
 		text := scanner.Text()
-
 		var req Request
 		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
 		if err != nil {
@@ -95,7 +94,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			log.Println(err)
 			continue
 		}
-		log.Printf("%d - bytes written; msg: %s", n, string(data))
+		log.Printf("read %s \n %d - bytes written; msg: %s", text, n, string(data))
 	}
 }
 
