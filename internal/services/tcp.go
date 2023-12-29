@@ -63,10 +63,8 @@ func (t *TCPServer) RunTCPServer() {
 func extractJSON(s string) ([]string, error) {
 	re := regexp.MustCompile(`\{([^}]*)\}`)
 
-	// Find all matches
 	matches := re.FindAllStringSubmatch(s, -1)
 
-	// Extract the substrings between curly braces
 	var results []string
 	for _, match := range matches {
 		if len(match) == 2 {
@@ -83,17 +81,15 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	defer conn.Close()
 	for scanner.Scan() {
 		buffer := scanner.Text()
-		log.Println(buffer)
-		log.Println(string(buffer))
 		var req Request
 		text, err := extractJSON(buffer)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		log.Println(text)
+		log.Println(len(text))
 		for _, val := range text {
-
+			log.Println(text)
 			err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
 			if err != nil {
 				log.Println(err)
