@@ -62,6 +62,8 @@ func (t *TCPServer) RunTCPServer() {
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	scanner := bufio.NewScanner(conn)
+	writer := bufio.NewWriter(conn)
+	defer conn.Close()
 	for scanner.Scan() {
 		text := scanner.Text()
 
@@ -76,10 +78,24 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			Conn:   conn,
 			Server: t,
 		}
-		log.Println(req)
 		t.Clients.Store(req.VmcNo, client)
-		client.HandleRequest(req)
 
+		response := client.HandleRequest(req)
+		data, err := sonic.ConfigFastest.Marshal(response)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		bs := make([]byte, 4)
+		padding := "A0000000"
+		binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
+		data = append(bs, append([]byte(padding), data...)...)
+		n, err := writer.Write(data)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		log.Printf("%d - bytes written; msg: %s", n, string(data))
 	}
 }
 
@@ -113,7 +129,7 @@ func (c *Client) Write(content ...Request) error {
 	return nil
 }
 
-func (c *Client) HandleRequest(request Request) {
+func (c *Client) HandleRequest(request Request) Request {
 
 	var response Request
 	switch request.Command {
@@ -129,8 +145,7 @@ func (c *Client) HandleRequest(request Request) {
 		response = c.CheckOrder(request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	}
-	log.Println(c.Write(request, response))
-	c.WriteToConn(response)
+	return response
 }
 
 func (c *Client) HB(request Request) Request {
