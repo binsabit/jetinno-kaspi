@@ -63,12 +63,18 @@ func (t *TCPServer) RunTCPServer() {
 func extractJSON(s string) ([]string, error) {
 	re := regexp.MustCompile(`\{([^}]*)\}`)
 
-	match := re.FindStringSubmatch(s)
-	if len(match) == 0 {
-		return nil, fmt.Errorf("No match found")
+	// Find all matches
+	matches := re.FindAllStringSubmatch(s, -1)
+
+	// Extract the substrings between curly braces
+	var results []string
+	for _, match := range matches {
+		if len(match) == 2 {
+			results = append(results, match[1])
+		}
 	}
 
-	return match, nil
+	return results, nil
 }
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
