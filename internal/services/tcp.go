@@ -65,10 +65,13 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	writer := bufio.NewWriter(conn)
 	defer conn.Close()
 	for scanner.Scan() {
-		text := scanner.Text()
+		buffer := scanner.Bytes()
 		var req Request
+		packetSize := binary.LittleEndian.Uint32(buffer[:4])
 
-		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
+		buffer = make([]byte, packetSize-4)
+
+		err := sonic.ConfigFastest.Unmarshal(buffer[8:], &req)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -88,15 +91,16 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 		bs := make([]byte, 4)
-		padding := "00000000"
+		padding := "y0000000"
 		binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
-		data = append(bs, append([]byte(padding), data...)...)
+		temp := append(bs, []byte(padding)...)
+		data = append(temp, data...)
 		_, err = writer.Write(data)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		log.Println(text)
+		log.Println(buffer)
 		log.Println(string(data))
 	}
 }
