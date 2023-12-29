@@ -50,11 +50,12 @@ type Request struct {
 
 func (t *TCPServer) RunTCPServer() {
 	for {
-		conn, err := t.Listener.Accept()
+		conn, err := t.Listener.AcceptTCP()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
+		conn.SetKeepAlive(true)
 		go t.HandleRequest(conn)
 
 	}
@@ -120,7 +121,6 @@ func (t *TCPServer) HandleRequest(conn net.Conn) {
 		return
 	}
 	if request == nil {
-		conn.Close()
 		return
 	}
 	client := &Client{
