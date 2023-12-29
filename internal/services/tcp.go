@@ -91,7 +91,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 		log.Println(text)
-		err = sonic.ConfigFastest.Unmarshal([]byte(text), &req)
+		err = sonic.ConfigFastest.Unmarshal([]byte("{"+text+"}"), &req)
 		if err != nil {
 			log.Println(err)
 			continue
