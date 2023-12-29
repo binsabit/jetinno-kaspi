@@ -97,6 +97,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 		log.Println(text)
+		log.Println(string(data))
 	}
 }
 
