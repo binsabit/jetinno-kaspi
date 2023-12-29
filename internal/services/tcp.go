@@ -87,6 +87,7 @@ func (t *TCPServer) ReadContinuouslyFromConnection(conn *net.TCPConn) {
 			done:   make(chan struct{}),
 		}
 		t.Clients.Store(request.VmcNo, client)
+		client.HandleRequest(*request)
 	}
 }
 
