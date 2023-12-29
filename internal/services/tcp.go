@@ -3,13 +3,10 @@ package services
 import (
 	"bufio"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"io"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -75,58 +72,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			log.Println(err)
 			continue
 		}
-		log.Println(req, text[13:])
+		t.HandleConnection(conn)
 	}
-}
-
-func (t *TCPServer) ReadContinuouslyFromConnection(conn *net.TCPConn) {
-	for {
-		request, err := ReadFromConnection(conn)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				continue
-			}
-			log.Println(err)
-			return
-		}
-		if request == nil {
-			return
-		}
-		client := &Client{
-			ID:     rand.Int(),
-			VmcNo:  request.VmcNo,
-			Conn:   conn,
-			Server: t,
-			done:   make(chan struct{}),
-		}
-		t.Clients.Store(request.VmcNo, client)
-		client.HandleRequest(*request)
-	}
-}
-
-func ReadFromConnection(conn *net.TCPConn) (*Request, error) {
-	buffer := make([]byte, 4)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-
-	}
-	packetSize := binary.LittleEndian.Uint32(buffer[:n])
-
-	buffer = make([]byte, packetSize-4)
-	n, err = conn.Read(buffer)
-	if err != nil {
-		return nil, err
-	}
-	var req Request
-	err = sonic.ConfigFastest.Unmarshal(buffer[8:n], &req)
-	if err != nil {
-		return nil, err
-	}
-	return &req, nil
 }
 
 func (c *Client) Write(content ...Request) error {
