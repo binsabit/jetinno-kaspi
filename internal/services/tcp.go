@@ -67,6 +67,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		var req Request
+		log.Println(text)
 		length := binary.BigEndian.Uint64([]byte(text[:4]))
 		log.Println([]byte(text), len(text), length)
 
