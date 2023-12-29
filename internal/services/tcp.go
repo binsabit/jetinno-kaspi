@@ -75,10 +75,10 @@ func (t *TCPServer) ReadContinuouslyFromConnection(conn *net.TCPConn) {
 	for {
 		request, err := ReadFromConnection(conn)
 		if err != nil {
-			log.Println(err)
 			if errors.Is(err, io.EOF) {
 				continue
 			}
+			log.Println(err)
 			return
 		}
 		if request == nil {
