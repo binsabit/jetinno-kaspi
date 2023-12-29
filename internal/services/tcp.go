@@ -71,7 +71,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		log.Println(string(buffer))
 		var req Request
 		text := "{" + strings.TrimLeft(strings.TrimRight(buffer, "}"), "{") + "}"
-
+		log.Println(text)
 		err := sonic.ConfigFastest.Unmarshal([]byte(text), &req)
 		if err != nil {
 			log.Println(err)
