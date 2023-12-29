@@ -71,7 +71,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		length := binary.BigEndian.Uint32([]byte(text[:4]))
 		log.Println([]byte(text), len(text), length)
 
-		err := sonic.ConfigFastest.Unmarshal([]byte(text[11:]), &req)
+		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
 		if err != nil {
 			log.Println(err)
 			continue
