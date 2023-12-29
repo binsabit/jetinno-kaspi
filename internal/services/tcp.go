@@ -87,7 +87,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			log.Println(err)
 			continue
 		}
-		log.Println(len(text))
 		for _, val := range text {
 			log.Println(val)
 			err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
@@ -118,8 +117,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				log.Println(err)
 				continue
 			}
-			log.Println(buffer)
-			log.Println(string(data))
+
 			if req.Command == pkg.COMMAND_QR_REQUEST {
 				done := true
 				res := Request{
@@ -145,8 +143,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 					log.Println(err)
 					continue
 				}
-				log.Println(buffer)
-				log.Println(string(data))
 			}
 
 		}
