@@ -63,22 +63,25 @@ func (t *TCPServer) RunTCPServer() {
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
-		text := scanner.Text()
-		log.Println(text, "----")
+		go func() {
+			text := scanner.Text()
 
-		var req Request
-		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		client := &Client{
-			VmcNo:  req.VmcNo,
-			Conn:   conn,
-			Server: t,
-		}
-		t.Clients.Store(req.VmcNo, client)
-		go client.HandleRequest(req)
+			var req Request
+			err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			client := &Client{
+				VmcNo:  req.VmcNo,
+				Conn:   conn,
+				Server: t,
+			}
+			log.Println(req)
+			t.Clients.Store(req.VmcNo, client)
+			client.HandleRequest(req)
+		}()
+
 	}
 }
 
