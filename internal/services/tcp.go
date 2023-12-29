@@ -60,20 +60,15 @@ func (t *TCPServer) RunTCPServer() {
 		go t.HandleConnection(conn)
 	}
 }
-func extractJSON(s string) (string, error) {
-	// Define a regular expression to match text between curly braces
+func extractJSON(s string) ([]string, error) {
 	re := regexp.MustCompile(`\{([^}]*)\}`)
 
-	// Find the first match
 	match := re.FindStringSubmatch(s)
-	if len(match) != 2 {
-		return "", fmt.Errorf("No match found")
+	if len(match) == 0 {
+		return nil, fmt.Errorf("No match found")
 	}
 
-	// Extract the substring between curly braces
-	result := match[1]
-
-	return result, nil
+	return match, nil
 }
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
@@ -91,37 +86,40 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 		log.Println(text)
-		err = sonic.ConfigFastest.Unmarshal([]byte("{"+text+"}"), &req)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		client := &Client{
-			VmcNo:  req.VmcNo,
-			Conn:   conn,
-			Server: t,
-		}
-		t.Clients.Store(req.VmcNo, client)
+		for _, val := range text {
 
-		response := client.HandleRequest(req)
+			err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			client := &Client{
+				VmcNo:  req.VmcNo,
+				Conn:   conn,
+				Server: t,
+			}
+			t.Clients.Store(req.VmcNo, client)
 
-		data, err := sonic.ConfigFastest.Marshal(response)
-		if err != nil {
-			log.Println(err)
-			continue
+			response := client.HandleRequest(req)
+
+			data, err := sonic.ConfigFastest.Marshal(response)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			bs := make([]byte, 4)
+			padding := "000y0000000"
+			binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
+			temp := append(bs, []byte(padding)...)
+			data = append(temp, data...)
+			_, err = writer.Write(data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			log.Println(buffer)
+			log.Println(string(data))
 		}
-		bs := make([]byte, 4)
-		padding := "000y0000000"
-		binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
-		temp := append(bs, []byte(padding)...)
-		data = append(temp, data...)
-		_, err = writer.Write(data)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		log.Println(buffer)
-		log.Println(string(data))
 	}
 }
 
