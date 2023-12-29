@@ -14,11 +14,12 @@ import (
 )
 
 type Client struct {
-	ID     int
-	VmcNo  int64
-	Conn   *net.TCPConn
-	Server *TCPServer
-	done   chan struct{}
+	ID      int
+	VmcNo   int64
+	Conn    *net.TCPConn
+	Server  *TCPServer
+	Writer  *bufio.Writer
+	Scanner *bufio.Scanner
 }
 
 type Request struct {
@@ -95,9 +96,11 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				continue
 			}
 			client := &Client{
-				VmcNo:  req.VmcNo,
-				Conn:   conn,
-				Server: t,
+				VmcNo:   req.VmcNo,
+				Conn:    conn,
+				Scanner: scanner,
+				Writer:  writer,
+				Server:  t,
 			}
 			t.Clients.Store(req.VmcNo, client)
 			response := client.HandleRequest(req)
