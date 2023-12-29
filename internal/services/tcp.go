@@ -72,7 +72,13 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			log.Println(err)
 			continue
 		}
-		t.HandleConnection(conn)
+		client := &Client{
+			VmcNo:  req.VmcNo,
+			Conn:   conn,
+			Server: t,
+		}
+		t.Clients.Store(req.VmcNo, client)
+		go client.HandleRequest(req)
 	}
 }
 
