@@ -9,7 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
-	"strings"
+	"regexp"
 	"time"
 )
 
@@ -60,6 +60,21 @@ func (t *TCPServer) RunTCPServer() {
 		go t.HandleConnection(conn)
 	}
 }
+func extractJSON(s string) (string, error) {
+	// Define a regular expression to match text between curly braces
+	re := regexp.MustCompile(`\{([^}]*)\}`)
+
+	// Find the first match
+	match := re.FindStringSubmatch(s)
+	if len(match) != 2 {
+		return "", fmt.Errorf("No match found")
+	}
+
+	// Extract the substring between curly braces
+	result := match[1]
+
+	return result, nil
+}
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	scanner := bufio.NewScanner(conn)
@@ -70,9 +85,13 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		log.Println(buffer)
 		log.Println(string(buffer))
 		var req Request
-		text := "{" + strings.TrimLeft(buffer, "{")
+		text, err := extractJSON(buffer)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
 		log.Println(text)
-		err := sonic.ConfigFastest.Unmarshal([]byte(text), &req)
+		err = sonic.ConfigFastest.Unmarshal([]byte(text), &req)
 		if err != nil {
 			log.Println(err)
 			continue
