@@ -82,22 +82,21 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		log.Println(req)
 
 		response := client.HandleRequest(req)
+
 		data, err := sonic.ConfigFastest.Marshal(response)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		bs := make([]byte, 4)
-		padding := "000f0000000"
-		binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
-		data = append(bs, append([]byte(padding), data...)...)
-		n, err := writer.Write(data)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		log.Printf("read %s \n %d - bytes written; msg: %s", text, n, string(data))
-		client.HandleRequest(req)
+		bs := make([]byte, 4)
+		padding := "00000000"
+		binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
+		data = append(bs, append([]byte(padding), data...)...)
+		_, err = writer.Write(data)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
 	}
 }
 
