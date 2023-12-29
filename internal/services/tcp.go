@@ -3,12 +3,10 @@ package services
 import (
 	"bufio"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"log"
-	"math/big"
 	"net"
 	"os"
 	"time"
@@ -71,16 +69,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		var req Request
 		length := binary.BigEndian.Uint64([]byte(text[:4]))
 		log.Println([]byte(text), len(text), length)
-		packet, err := hex.DecodeString(text[:4])
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		intval := new(big.Int)
-		intval.SetBytes(packet)
-		log.Println(intval.Int64())
 
-		err = sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
+		err := sonic.ConfigFastest.Unmarshal([]byte(text[7:]), &req)
 		if err != nil {
 			log.Println(err)
 			continue
