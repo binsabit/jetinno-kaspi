@@ -61,7 +61,7 @@ func (t *TCPServer) AcceptConnection() {
 }
 
 func (t *TCPServer) RunTCPServer() {
-
+	go t.AcceptConnection()
 	for {
 		select {
 		case conn := <-t.ConnChan:
