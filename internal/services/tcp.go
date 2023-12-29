@@ -15,7 +15,7 @@ import (
 type Client struct {
 	ID     int
 	VmcNo  int64
-	Conn   net.Conn
+	Conn   *net.TCPConn
 	Server *TCPServer
 	done   chan struct{}
 }
@@ -48,7 +48,7 @@ type Request struct {
 	PayDone        *bool             `json:"paydone,omitempty"`
 }
 
-func (t *TCPServer) RunTCPServer() {
+func (t *TCPServer) AcceptConnection() {
 	for {
 		conn, err := t.Listener.AcceptTCP()
 		if err != nil {
@@ -56,12 +56,41 @@ func (t *TCPServer) RunTCPServer() {
 			continue
 		}
 		conn.SetKeepAlive(true)
-		go t.HandleRequest(conn)
-
+		t.ConnChan <- conn
 	}
 }
 
-func ReadFromConnection(conn net.Conn) (*Request, error) {
+func (t *TCPServer) RunTCPServer() {
+
+	for {
+		select {
+		case conn := <-t.ConnChan:
+			go t.ReadContinuouslyFromConnection(conn)
+		}
+	}
+}
+func (t *TCPServer) ReadContinuouslyFromConnection(conn *net.TCPConn) {
+	for {
+		request, err := ReadFromConnection(conn)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		if request == nil {
+			return
+		}
+		client := &Client{
+			ID:     rand.Int(),
+			VmcNo:  request.VmcNo,
+			Conn:   conn,
+			Server: t,
+			done:   make(chan struct{}),
+		}
+		t.Clients.Store(request.VmcNo, client)
+	}
+}
+
+func ReadFromConnection(conn *net.TCPConn) (*Request, error) {
 	buffer := make([]byte, 4)
 	n, err := conn.Read(buffer)
 	if err != nil {
@@ -112,42 +141,24 @@ func (c *Client) Write(content ...Request) error {
 	return nil
 }
 
-func (t *TCPServer) HandleRequest(conn net.Conn) {
-	request, err := ReadFromConnection(conn)
-	defer conn.Close()
-	if err != nil {
-		log.Println(err)
-		conn.Close()
-		return
-	}
-	if request == nil {
-		return
-	}
-	client := &Client{
-		ID:    rand.Int(),
-		VmcNo: request.VmcNo,
-		Conn:  conn,
-		done:  make(chan struct{}),
-	}
-	if val, ok := t.Clients.Load(request.VmcNo); ok {
-		val.(*Client).done <- struct{}{}
-	}
+func (c *Client) HandleRequest(request Request) {
+
 	var response Request
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
-		response = client.HB(*request)
+		response = c.HB(request)
 	case pkg.COMMAND_ERROR_REQUEST:
 	case pkg.COMMAND_LOGIN_REQUEST:
-		response = client.Login(*request)
+		response = c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
 	case pkg.COMMAND_QR_REQUEST:
-		response = client.QR(*request)
+		response = c.QR(request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
-		response = client.CheckOrder(*request)
+		response = c.CheckOrder(request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	}
-	log.Println(client.Write(*request, response))
-	client.WriteToConn(response)
+	log.Println(c.Write(request, response))
+	c.WriteToConn(response)
 }
 
 func (c *Client) HB(request Request) Request {
