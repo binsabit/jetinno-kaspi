@@ -79,7 +79,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			Server: t,
 		}
 		t.Clients.Store(req.VmcNo, client)
-		log.Println(req)
 
 		response := client.HandleRequest(req)
 
@@ -97,6 +96,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			log.Println(err)
 			continue
 		}
+		log.Println(text)
 	}
 }
 
