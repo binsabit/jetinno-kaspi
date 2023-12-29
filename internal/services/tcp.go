@@ -86,8 +86,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			return
 		}
 		bs := make([]byte, 4)
-		padding := "A0000000"
-		binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
+		padding := "000A0000000"
+		binary.LittleEndian.PutUint32(bs, uint32(len(data))+15)
 		data = append(bs, append([]byte(padding), data...)...)
 		n, err := writer.Write(data)
 		if err != nil {
