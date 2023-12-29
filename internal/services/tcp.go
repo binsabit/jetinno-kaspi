@@ -70,7 +70,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		log.Println(text, "----")
 
 		var req Request
-		err := sonic.ConfigFastest.Unmarshal([]byte(text[13:]), &req)
+		err := sonic.ConfigFastest.Unmarshal([]byte(text[12:]), &req)
 		if err != nil {
 			log.Println(err)
 			continue
