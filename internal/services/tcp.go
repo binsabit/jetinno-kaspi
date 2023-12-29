@@ -73,7 +73,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 
 		buffer = make([]byte, packetSize-4)
 
-		err := sonic.ConfigFastest.Unmarshal(buffer[8:], &req)
+		err := sonic.ConfigFastest.Unmarshal(buffer[7:], &req)
 		if err != nil {
 			log.Println(err)
 			continue
