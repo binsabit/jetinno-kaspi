@@ -89,7 +89,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		}
 		log.Println(len(text))
 		for _, val := range text {
-			log.Println(text)
+			log.Println(val)
 			err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
 			if err != nil {
 				log.Println(err)
