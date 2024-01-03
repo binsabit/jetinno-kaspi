@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
+	"github.com/skip2/go-qrcode"
 	"log"
 	"net"
-	"os"
 	"regexp"
 	"time"
 )
@@ -152,36 +152,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	}
 }
 
-func (c *Client) Write(content ...Request) error {
-
-	file, err := os.OpenFile(fmt.Sprintf("./logs/%d.txt", c.VmcNo), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		log.Printf("Error while opening file %v\n", err)
-		return err
-	}
-	for _, val := range content {
-
-		bytes, err := sonic.Marshal(val)
-		if err != nil {
-			log.Printf("Error while marshling json, %v\n", err)
-			return err
-		}
-
-		log.Println(c.ID, string(bytes))
-		bytesWritten, err := file.Write(bytes)
-		if err != nil {
-			log.Printf("Error while writing to file %v\n", err)
-			return err
-		}
-		if bytesWritten == 0 {
-			log.Printf("No content in connection: ClientID:%d", c.VmcNo)
-			return err
-		}
-		_, _ = file.Write([]byte("\n"))
-	}
-	return nil
-}
-
 func (c *Client) HandleRequest(request Request) Request {
 
 	var response Request
@@ -215,7 +185,9 @@ func (c *Client) QR(request Request) Request {
 		Order_No: request.Order_No,
 		QR_type:  request.QR_type,
 	}
-	qr := "weixin://wxpay/bizpayurl?pr=jWRhupP"
+	filename := fmt.Sprintf("/public/%d_%s.png", request.VmcNo, request.Order_No)
+	_ = qrcode.WriteFile("https://example.org", qrcode.Medium, 256, fmt.Sprintf("/public/%d_%s.png", request.VmcNo, request.Order_No))
+	qr := fmt.Sprintf("185.100.67.252:3000/%s", filename)
 	response.QRCode = &qr
 	return response
 }
@@ -247,20 +219,4 @@ func (c *Client) Login(request Request) Request {
 		Ret:          &ret,
 	}
 	return response
-}
-
-func (c *Client) WriteToConn(response Request) error {
-	data, err := sonic.ConfigFastest.Marshal(response)
-	if err != nil {
-		return err
-	}
-	bs := make([]byte, 4)
-	padding := "00000000"
-	binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
-	data = append(bs, append([]byte(padding), data...)...)
-	_, err = c.Conn.Write(data)
-	if err != nil {
-		return err
-	}
-	return nil
 }
