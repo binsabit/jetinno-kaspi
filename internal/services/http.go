@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+func (s Server) RunHTTPServer(port string) error {
+	s.SetUpRoutes()
+	return s.HTTPServer.Listen(":" + port)
+}
 func (s *Server) SetUpRoutes() {
 
 	s.HTTPServer.Get("/payment", s.WebHookHandler)
@@ -18,10 +22,6 @@ func (s *Server) SetUpRoutes() {
 	s.HTTPServer.Get("/log/:id", func(ctx *fiber.Ctx) error {
 		return ctx.Download(fmt.Sprintf("./logs/%s.txt", ctx.Params("id")))
 	})
-}
-func (s Server) RunHTTPServer(port string) error {
-	s.SetUpRoutes()
-	return s.HTTPServer.Listen(":" + port)
 }
 
 func (s *Server) WebHookHandler(ctx *fiber.Ctx) error {

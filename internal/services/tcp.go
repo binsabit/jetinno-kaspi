@@ -3,10 +3,8 @@ package services
 import (
 	"bufio"
 	"encoding/binary"
-	"fmt"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"github.com/skip2/go-qrcode"
 	"log"
 	"net"
 	"regexp"
@@ -185,9 +183,7 @@ func (c *Client) QR(request Request) Request {
 		Order_No: request.Order_No,
 		QR_type:  request.QR_type,
 	}
-	filename := fmt.Sprintf("/public/%d_%s.png", request.VmcNo, request.Order_No)
-	_ = qrcode.WriteFile("https://example.org", qrcode.Medium, 256, fmt.Sprintf("/public/%d_%s.png", request.VmcNo, request.Order_No))
-	qr := fmt.Sprintf("185.100.67.252:3000/%s", filename)
+	qr := "https://qr.vendmarket.kz//storage/moonshine_users/3JZpkEc55UmYCBvUqR7AwxFNspxUjFzzV1t7hFt0.png"
 	response.QRCode = &qr
 	return response
 }
