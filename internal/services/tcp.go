@@ -180,6 +180,7 @@ func (c *Client) QR(request Request) Request {
 	response := Request{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_QR_RESPONSE,
+		Amount:   request.Amount,
 		Order_No: request.Order_No,
 		QR_type:  request.QR_type,
 	}
@@ -193,6 +194,7 @@ func (c *Client) CheckOrder(request Request) Request {
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
 		Order_No: request.Order_No,
+		Amount:   request.Amount,
 		QR_type:  request.QR_type,
 		PayType:  request.PayType,
 		PayDone:  &done,
