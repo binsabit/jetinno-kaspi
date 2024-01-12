@@ -2,7 +2,6 @@ package services
 
 import (
 	"bufio"
-	"encoding/binary"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"log"
@@ -87,7 +86,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 		for _, val := range text {
-			log.Println(val)
 			err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
 			if err != nil {
 				log.Println(err)
@@ -108,44 +106,19 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				log.Println(err)
 				continue
 			}
-			bs := make([]byte, 4)
-			padding := "000y0000000"
-			binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
-			temp := append(bs, []byte(padding)...)
+
+			length := []byte{uint8(len(data)) + 48, 48, 48, 48}
+			padding := val[4:12]
+
+			temp := append(length, padding...)
 			data = append(temp, data...)
 			_, err = writer.Write(data)
 			if err != nil {
 				log.Println(err)
 				continue
 			}
-
-			if req.Command == pkg.COMMAND_QR_REQUEST {
-				done := true
-				res := Request{
-					VmcNo:          req.VmcNo,
-					Command:        pkg.COMMAND_PAYDONE_REQUEST,
-					Order_No:       req.Order_No,
-					Product_Amount: req.Product_Amount,
-					PayDone:        &done,
-					PayType:        req.PayType,
-				}
-				data, err := sonic.ConfigFastest.Marshal(res)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				bs := make([]byte, 4)
-				padding := "000y0000000"
-				binary.LittleEndian.PutUint32(bs, uint32(len(data))+12)
-				temp := append(bs, []byte(padding)...)
-				data = append(temp, data...)
-				_, err = writer.Write(data)
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-			}
-
+			log.Println("request:", val)
+			log.Println("response", data)
 		}
 	}
 }
