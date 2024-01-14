@@ -107,8 +107,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				continue
 			}
 
-			length := []byte{uint8(len(data)) + 48, 48, 48, 48}
-			padding := val[4:12]
+			length := []byte{uint8(len(data)) + 48 + 12, 48, 48, 48}
+			padding := []byte{116, 48, 48, 48, 48, 48, 48, 48}
 
 			temp := append(length, padding...)
 			data = append(temp, data...)
@@ -118,7 +118,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				continue
 			}
 			log.Println("request:", val)
-			log.Println("response", data)
+			log.Println("response", string(data))
 		}
 	}
 }
@@ -177,7 +177,7 @@ func (c *Client) CheckOrder(request Request) Request {
 }
 
 func (c *Client) Login(request Request) Request {
-	carrierCode := "TW-00418"
+	carrierCode := "jn9527"
 	dateTime := time.Now().Format(time.DateTime)
 	serverlist := "185.100.67.252"
 	ret := 0
