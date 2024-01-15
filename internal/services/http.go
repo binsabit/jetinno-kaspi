@@ -22,6 +22,25 @@ func (s *Server) SetUpRoutes() {
 	s.HTTPServer.Get("/log/:id", func(ctx *fiber.Ctx) error {
 		return ctx.Download(fmt.Sprintf("./logs/%s.txt", ctx.Params("id")))
 	})
+
+	s.HTTPServer.Get("/product/:id", func(ctx *fiber.Ctx) error {
+		vmcNo, err := ctx.ParamsInt("id", 0)
+		if err != nil {
+			return err
+		}
+
+		tcpClient, ok := s.TCPServer.Clients.Load(vmcNo)
+
+		if !ok {
+			return fmt.Errorf("vmc not exists")
+		}
+
+		return tcpClient.(*Client).Write(Request{
+			VmcNo:   int64(vmcNo),
+			Command: "rinsing",
+		})
+
+	})
 }
 
 func (s *Server) WebHookHandler(ctx *fiber.Ctx) error {

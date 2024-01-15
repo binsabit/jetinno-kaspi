@@ -98,29 +98,39 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				Writer:  writer,
 				Server:  t,
 			}
+
 			t.Clients.Store(req.VmcNo, client)
+
 			response := client.HandleRequest(req)
-
-			data, err := sonic.ConfigFastest.Marshal(response)
-			if err != nil {
+			if err = client.Write(response); err != nil {
 				log.Println(err)
 				continue
 			}
 
-			length := []byte{uint8(len(data)) + 48 + 12, 48, 48, 48}
-			padding := []byte{116, 48, 48, 48, 48, 48, 48, 48}
-
-			temp := append(length, padding...)
-			data = append(temp, data...)
-			_, err = writer.Write(data)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
 			log.Println("request:", val)
-			log.Println("response", string(data))
+			log.Println("response", response)
 		}
 	}
+}
+
+func (c *Client) Write(data Request) error {
+	payload, err := sonic.ConfigFastest.Marshal(data)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	length := []byte{uint8(len(payload)) + 48 + 12, 48, 48, 48}
+	padding := []byte{116, 48, 48, 48, 48, 48, 48, 48}
+
+	temp := append(length, padding...)
+	payload = append(temp, payload...)
+	_, err = c.Writer.Write(payload)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }
 
 func (c *Client) HandleRequest(request Request) Request {
