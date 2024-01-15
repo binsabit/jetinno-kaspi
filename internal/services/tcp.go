@@ -5,6 +5,7 @@ import (
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"log"
+	"math/rand"
 	"net"
 	"regexp"
 	"time"
@@ -76,6 +77,7 @@ func extractJSON(s string) ([]string, error) {
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	scanner := bufio.NewScanner(conn)
 	writer := bufio.NewWriter(conn)
+	clientCode := rand.Int()
 	defer conn.Close()
 	for scanner.Scan() {
 		buffer := scanner.Text()
@@ -107,8 +109,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				continue
 			}
 
-			log.Println("request:", val)
-			log.Println("response", response)
+			log.Println(clientCode, "request:", val)
+			log.Println(clientCode, "response", response)
 		}
 	}
 }
