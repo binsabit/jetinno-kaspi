@@ -122,8 +122,8 @@ func (c *Client) Write(data Request) error {
 		return err
 	}
 
-	length := []byte{uint8(len(payload)) + 48 + 12, 48, 48, 48}
-	padding := []byte{116, 48, 48, 48, 48, 48, 48, 48}
+	length := []byte{uint8(len(payload)) + 12, 0, 0, 0}
+	padding := []byte{116, 0, 0, 0, 0, 0, 0, 0}
 
 	temp := append(length, padding...)
 	payload = append(temp, payload...)
