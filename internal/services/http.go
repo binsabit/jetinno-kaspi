@@ -35,7 +35,7 @@ func (s *Server) SetUpRoutes() {
 			return fmt.Errorf("vmc not exists")
 		}
 
-		return tcpClient.(*Client).Write(Request{
+		return tcpClient.(*Client).Write(JetinnoPayload{
 			VmcNo:   int64(vmcNo),
 			Command: "rinsing",
 		})

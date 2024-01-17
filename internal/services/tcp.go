@@ -2,6 +2,7 @@ package services
 
 import (
 	"bufio"
+	"encoding/binary"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"log"
@@ -20,7 +21,7 @@ type Client struct {
 	Scanner *bufio.Scanner
 }
 
-type Request struct {
+type JetinnoPayload struct {
 	Command        string            `json:"cmd"`
 	VmcNo          int64             `json:"vmc_no"`
 	State          *string           `json:"state,omitempty"`
@@ -81,7 +82,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	defer conn.Close()
 	for scanner.Scan() {
 		buffer := scanner.Text()
-		var req Request
+		var req JetinnoPayload
 		text, err := extractJSON(buffer)
 		if err != nil {
 			log.Println(err)
@@ -115,19 +116,21 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	}
 }
 
-func (c *Client) Write(data Request) error {
-	payload, err := sonic.ConfigFastest.Marshal(data)
+func (c *Client) Write(response JetinnoPayload) error {
+	payload, err := sonic.ConfigFastest.Marshal(response)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+	buf := make([]byte, 4)
+	length := len(payload) + 12
 
-	length := []byte{uint8(len(payload)) + 12, 0, 0, 0}
-	padding := []byte{116, 0, 0, 0, 0, 0, 0, 0}
+	binary.LittleEndian.PutUint32(buf, uint32(length))
+	padding := []byte{116, 48, 48, 48, 48, 48, 48, 48}
 
-	temp := append(length, padding...)
-	payload = append(temp, payload...)
-	_, err = c.Writer.Write(payload)
+	temp := append(buf, padding...)
+	data := append(temp, payload...)
+	_, err = c.Writer.Write(data)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -135,9 +138,9 @@ func (c *Client) Write(data Request) error {
 	return nil
 }
 
-func (c *Client) HandleRequest(request Request) Request {
+func (c *Client) HandleRequest(request JetinnoPayload) JetinnoPayload {
 
-	var response Request
+	var response JetinnoPayload
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
 		response = c.HB(request)
@@ -154,15 +157,15 @@ func (c *Client) HandleRequest(request Request) Request {
 	return response
 }
 
-func (c *Client) HB(request Request) Request {
-	return Request{
+func (c *Client) HB(request JetinnoPayload) JetinnoPayload {
+	return JetinnoPayload{
 		VmcNo:   request.VmcNo,
 		Command: pkg.COMMAND_HEARDBEAT,
 	}
 }
 
-func (c *Client) QR(request Request) Request {
-	response := Request{
+func (c *Client) QR(request JetinnoPayload) JetinnoPayload {
+	response := JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_QR_RESPONSE,
 		Amount:   request.Amount,
@@ -173,9 +176,9 @@ func (c *Client) QR(request Request) Request {
 	response.QRCode = &qr
 	return response
 }
-func (c *Client) CheckOrder(request Request) Request {
+func (c *Client) CheckOrder(request JetinnoPayload) JetinnoPayload {
 	done := true
-	response := Request{
+	response := JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
 		Order_No: request.Order_No,
@@ -188,12 +191,12 @@ func (c *Client) CheckOrder(request Request) Request {
 	return response
 }
 
-func (c *Client) Login(request Request) Request {
+func (c *Client) Login(request JetinnoPayload) JetinnoPayload {
 	carrierCode := "jn9527"
 	dateTime := time.Now().Format(time.DateTime)
 	serverlist := "185.100.67.252"
 	ret := 0
-	response := Request{
+	response := JetinnoPayload{
 		VmcNo:        request.VmcNo,
 		Command:      pkg.COMMAND_LOGIN_RESPONSE,
 		Carrier_Code: &carrierCode,

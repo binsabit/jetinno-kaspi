@@ -32,7 +32,7 @@ type TCPServer struct {
 
 type Message struct {
 	Client  *Client
-	Request Request
+	Request JetinnoPayload
 }
 
 func NewServer(TCPPort string) (*Server, error) {
