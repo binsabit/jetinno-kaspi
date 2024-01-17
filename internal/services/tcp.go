@@ -111,7 +111,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 			log.Println(clientCode, "request:", val)
-			log.Println(clientCode, "response", response)
 		}
 	}
 }
@@ -135,6 +134,7 @@ func (c *Client) Write(response JetinnoPayload) error {
 		log.Println(err)
 		return err
 	}
+	log.Println(data)
 	return nil
 }
 
