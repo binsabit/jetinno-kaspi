@@ -104,7 +104,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			continue
 		}
 		if n < 8 {
-			return
+			continue
 		}
 		payload := buf[8:n]
 		request := JetinnoPayload{}
