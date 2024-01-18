@@ -79,6 +79,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	clientCode := rand.Int()
 	log.Println(clientCode)
 	client := &Client{
+		ID:     clientCode,
 		Conn:   conn,
 		Server: t,
 	}
@@ -94,8 +95,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		for _, val := range lengthByte[:n] {
 			length += int(val - 48)
 		}
-
-		log.Println(n, length)
 
 		buf := make([]byte, length-4)
 		n, err = conn.Read(buf)
@@ -160,7 +159,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	//		log.Println(clientCode, "request:", val)
 	//	}
 	//}
-	log.Println("finished")
 }
 
 func (c *Client) Write(response JetinnoPayload) error {
@@ -186,7 +184,6 @@ func (c *Client) Write(response JetinnoPayload) error {
 		}
 
 	}
-	log.Println(lengthByte)
 	padding := []byte{116, 48, 48, 48, 48, 48, 48, 48}
 
 	data := append(lengthByte, append(padding, payload...)...)
@@ -195,7 +192,7 @@ func (c *Client) Write(response JetinnoPayload) error {
 		log.Println(err)
 		return err
 	}
-	log.Println(string(data))
+	log.Println(c.ID, string(data))
 	return nil
 }
 
