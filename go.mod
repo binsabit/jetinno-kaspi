@@ -1,6 +1,6 @@
 module github.com/binsabit/jetinno-kapsi
 
-go 1.21.0
+go 1.18.0
 
 require (
 	github.com/bytedance/sonic v1.10.2
