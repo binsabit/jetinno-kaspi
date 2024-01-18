@@ -119,13 +119,14 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		t.Clients.Store(request.VmcNo, client)
 
 		response := client.HandleRequest(request)
-		if err = client.Write(response); err != nil {
-			log.Println(err)
-			continue
+		if response != nil {
+			if err = client.Write(*response); err != nil {
+				log.Println(err)
+				continue
+			}
+
+			log.Println(clientCode, "request:", string(buf))
 		}
-
-		log.Println(clientCode, "request:", string(buf))
-
 	}
 	//scanner := bufio.NewScanner(conn)
 	//writer := bufio.NewWriter(conn)
@@ -198,7 +199,7 @@ func (c *Client) Write(response JetinnoPayload) error {
 	return nil
 }
 
-func (c *Client) HandleRequest(request JetinnoPayload) JetinnoPayload {
+func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
 
 	var response JetinnoPayload
 	switch request.Command {
@@ -216,7 +217,7 @@ func (c *Client) HandleRequest(request JetinnoPayload) JetinnoPayload {
 	case pkg.COMMAND_PRODUCTDONE_REQUEST:
 		response = c.ProductDone(request)
 	}
-	return response
+	return &response
 }
 
 func (c *Client) HB(request JetinnoPayload) JetinnoPayload {
