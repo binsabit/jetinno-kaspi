@@ -102,7 +102,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			log.Println(err)
 			return
 		}
-		payload := buf[8:n]
+		payload := buf[7:n]
 		request := JetinnoPayload{}
 		err = sonic.ConfigFastest.Unmarshal(payload, &request)
 		if err != nil {
