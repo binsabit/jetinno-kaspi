@@ -95,8 +95,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		for _, val := range lengthByte[:4] {
 			length += int(val - 48)
 		}
-
-		buf := make([]byte, length-4)
+		log.Println(lengthByte[:4])
+		buf := make([]byte, length)
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
