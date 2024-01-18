@@ -2,7 +2,6 @@ package services
 
 import (
 	"bufio"
-	"encoding/binary"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"log"
@@ -76,43 +75,92 @@ func extractJSON(s string) ([]string, error) {
 }
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
-	scanner := bufio.NewScanner(conn)
-	writer := bufio.NewWriter(conn)
+
 	clientCode := rand.Int()
-	defer conn.Close()
-	for scanner.Scan() {
-		buffer := scanner.Text()
-		var req JetinnoPayload
-		text, err := extractJSON(buffer)
+	log.Println(clientCode)
+	client := &Client{
+		Conn:   conn,
+		Server: t,
+	}
+	for {
+		lengthByte := make([]byte, 4)
+
+		n, err := conn.Read(lengthByte)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		var length int
+		for _, val := range lengthByte[:n] {
+			length += int(val - 48)
+		}
+
+		log.Println(n, length)
+
+		buf := make([]byte, length-4)
+		n, err = conn.Read(buf)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		payload := buf[8:n]
+		request := JetinnoPayload{}
+		err = sonic.ConfigFastest.Unmarshal(payload, &request)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		for _, val := range text {
-			err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
-			if err != nil {
-				log.Println(err, val)
-				continue
-			}
-			client := &Client{
-				VmcNo:   req.VmcNo,
-				Conn:    conn,
-				Scanner: scanner,
-				Writer:  writer,
-				Server:  t,
-			}
 
-			t.Clients.Store(req.VmcNo, client)
+		client.VmcNo = request.VmcNo
 
-			response := client.HandleRequest(req)
-			if err = client.Write(response); err != nil {
-				log.Println(err)
-				continue
-			}
+		t.Clients.Store(request.VmcNo, client)
 
-			log.Println(clientCode, "request:", val)
+		response := client.HandleRequest(request)
+		if err = client.Write(response); err != nil {
+			log.Println(err)
+			continue
 		}
+
+		log.Println(clientCode, "request:", string(buf))
+
 	}
+	//scanner := bufio.NewScanner(conn)
+	//writer := bufio.NewWriter(conn)
+	//for scanner.Scan() {
+	//	buffer := scanner.Text()
+	//	log.Println(buffer)
+	//	var req JetinnoPayload
+	//	text, err := extractJSON(buffer)
+	//	if err != nil {
+	//		log.Println(err)
+	//		continue
+	//	}
+	//	for _, val := range text {
+	//		err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
+	//		if err != nil {
+	//			log.Println(err, val)
+	//			continue
+	//		}
+	//		client := &Client{
+	//			VmcNo:   req.VmcNo,
+	//			Conn:    conn,
+	//			Scanner: scanner,
+	//			Writer:  writer,
+	//			Server:  t,
+	//		}
+	//
+	//		t.Clients.Store(req.VmcNo, client)
+	//
+	//		response := client.HandleRequest(req)
+	//		if err = client.Write(response); err != nil {
+	//			log.Println(err)
+	//			continue
+	//		}
+	//
+	//		log.Println(clientCode, "request:", val)
+	//	}
+	//}
+	log.Println("finished")
 }
 
 func (c *Client) Write(response JetinnoPayload) error {
@@ -121,15 +169,28 @@ func (c *Client) Write(response JetinnoPayload) error {
 		log.Println(err)
 		return err
 	}
-	buf := make([]byte, 4)
-	length := len(payload) + 12
 
-	binary.LittleEndian.PutUint32(buf, uint32(length))
+	lengthPayload := len(payload) + 12
+	lengthByte := []byte{48, 48, 48, 48}
+
+	for i := 0; i < 4; i++ {
+		if lengthPayload == 0 {
+			break
+		}
+		if lengthPayload > 255-48 {
+			lengthByte[i] = uint8(255 - 48)
+			lengthPayload -= 255 - 48
+		} else {
+			lengthByte[i] = uint8(lengthPayload - 48)
+			lengthPayload = 0
+		}
+
+	}
+	log.Println(lengthByte)
 	padding := []byte{116, 48, 48, 48, 48, 48, 48, 48}
 
-	temp := append(buf, padding...)
-	data := append(temp, payload...)
-	_, err = c.Writer.Write(data)
+	data := append(lengthByte, append(padding, payload...)...)
+	_, err = c.Conn.Write(data)
 	if err != nil {
 		log.Println(err)
 		return err
