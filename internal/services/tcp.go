@@ -93,7 +93,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			return
 		}
 		var length int
-		for _, val := range lengthByte[:4] {
+		for _, val := range lengthByte[:] {
 			length += int(val - 48)
 		}
 		log.Println(lengthByte[:4])
