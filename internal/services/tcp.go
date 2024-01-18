@@ -2,11 +2,14 @@ package services
 
 import (
 	"bufio"
+	"encoding/base64"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
+	"io"
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"regexp"
 	"time"
 )
@@ -234,8 +237,19 @@ func (c *Client) QR(request JetinnoPayload) JetinnoPayload {
 		Order_No: request.Order_No,
 		QR_type:  request.QR_type,
 	}
-	qr := "https://qr.vendmarket.kz//storage/moonshine_users/3JZpkEc55UmYCBvUqR7AwxFNspxUjFzzV1t7hFt0.png"
-	response.QRCode = &qr
+	//qr := "https://qr.vendmarket.kz//storage/moonshine_users/3JZpkEc55UmYCBvUqR7AwxFNspxUjFzzV1t7hFt0.png"
+	img, err := os.Open("1.png")
+	if err != nil {
+		log.Println(err)
+		return response
+	}
+	data, err := io.ReadAll(img)
+	if err != nil {
+		log.Println(err)
+		return response
+	}
+	sEnc := base64.StdEncoding.EncodeToString(data)
+	response.QRCode = &sEnc
 	return response
 }
 func (c *Client) CheckOrder(request JetinnoPayload) JetinnoPayload {
