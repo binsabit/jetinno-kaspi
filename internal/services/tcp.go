@@ -172,15 +172,13 @@ func (c *Client) Write(response JetinnoPayload) error {
 	lengthByte := []byte{48, 48, 48, 48}
 
 	for i := 0; i < 4; i++ {
-		if lengthPayload == 0 {
-			break
-		}
 		if lengthPayload > 255-48 {
-			lengthByte[i] = uint8(255 - 48)
-			lengthPayload -= 255 - 48
+			lengthByte[i] = uint8(255)
+			lengthPayload = lengthPayload - 255 + 48
 		} else {
-			lengthByte[i] = uint8(lengthPayload - 48)
+			lengthByte[i] = uint8(lengthPayload + 48)
 			lengthPayload = 0
+			break
 		}
 
 	}
