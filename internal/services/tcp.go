@@ -76,10 +76,8 @@ func extractJSON(s string) ([]string, error) {
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 
-	clientCode := rand.Int()
-	log.Println(clientCode)
 	client := &Client{
-		ID:     clientCode,
+		ID:     rand.Int(),
 		Conn:   conn,
 		Server: t,
 	}
@@ -101,10 +99,10 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
-			continue
+			return
 		}
 		if n < 8 {
-			continue
+			return
 		}
 		payload := buf[8:n]
 		request := JetinnoPayload{}
@@ -112,7 +110,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		if err != nil {
 			log.Println(string(buf), lengthByte, buf)
 			log.Println(err)
-			continue
+			return
 		}
 
 		client.VmcNo = request.VmcNo
@@ -126,7 +124,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				continue
 			}
 
-			log.Println(clientCode, "request:", string(buf))
+			log.Println(client.ID, "request:", string(buf))
 		}
 	}
 	//scanner := bufio.NewScanner(conn)
