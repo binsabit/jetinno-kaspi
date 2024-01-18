@@ -209,6 +209,8 @@ func (c *Client) HandleRequest(request JetinnoPayload) JetinnoPayload {
 	case pkg.COMMAND_CHECKORDER_REQUEST:
 		response = c.CheckOrder(request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
+	case pkg.COMMAND_PRODUCTDONE_REQUEST:
+		response = c.ProductDone(request)
 	}
 	return response
 }
@@ -242,6 +244,15 @@ func (c *Client) CheckOrder(request JetinnoPayload) JetinnoPayload {
 		QR_type:  request.QR_type,
 		PayType:  request.PayType,
 		PayDone:  &done,
+	}
+
+	return response
+}
+func (c *Client) ProductDone(request JetinnoPayload) JetinnoPayload {
+	response := JetinnoPayload{
+		VmcNo:    request.VmcNo,
+		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,
+		Order_No: request.Order_No,
 	}
 
 	return response

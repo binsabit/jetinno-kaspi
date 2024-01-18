@@ -25,4 +25,6 @@ const (
 	COMMAND_PAYDONE_RESPONSE       = "paydone_r"
 	COMMAND_CHECKORDER_REQUEST     = "checkorder"
 	COMMAND_CHECKORDER_RESPONSE    = "checkorder_r"
+	COMMAND_PRODUCTDONE_RESPONSE   = "productdone"
+	COMMAND_PRODUCTDONE_REQUEST    = "productdone_r"
 )
