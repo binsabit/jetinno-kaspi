@@ -83,6 +83,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		Conn:   conn,
 		Server: t,
 	}
+	defer conn.Close()
 	for {
 		lengthByte := make([]byte, 4)
 
@@ -100,6 +101,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
+			continue
+		}
+		if n < 8 {
 			return
 		}
 		payload := buf[8:n]
