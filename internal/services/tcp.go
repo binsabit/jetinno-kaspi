@@ -235,7 +235,7 @@ func (c *Client) QR(request JetinnoPayload) JetinnoPayload {
 		QR_type:  request.QR_type,
 	}
 
-	qr := "XXXXXXXXXXXXX"
+	qr := "53304768664212477677522211329148097116934"
 	response.QRCode = &qr
 	return response
 }
