@@ -235,7 +235,7 @@ func (c *Client) QR(request JetinnoPayload) JetinnoPayload {
 		QR_type:  request.QR_type,
 	}
 
-	qr := "53304768664212477677522211329148097116934"
+	qr := "https://kaspi.kz/pay/VENDMARKET?service_id=6911&10979=77711122"
 	response.QRCode = &qr
 	return response
 }
