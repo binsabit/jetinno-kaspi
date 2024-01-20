@@ -124,8 +124,11 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	}()
 
 	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		requests, err := extractJSON(string(scanner.Bytes()))
+	for {
+		if ok := scanner.Scan(); !ok {
+			return
+		}
+		requests, err := extractJSON(scanner.Text())
 		if err != nil {
 			log.Println(err)
 			return
