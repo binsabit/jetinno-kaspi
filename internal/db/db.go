@@ -9,13 +9,15 @@ import (
 	"time"
 )
 
+var Storage *Database
+
 type Database struct {
 	db *pgxpool.Pool
 }
 
-func New(ctx context.Context) (*Database, error) {
+func New(ctx context.Context) error {
 	if config.AppConfig.ENV == "test" {
-		return &Database{}, nil
+		return nil
 	}
 	cfg := config.AppConfig
 	dsn := url.URL{
@@ -32,7 +34,7 @@ func New(ctx context.Context) (*Database, error) {
 	dsn.RawQuery = q.Encode()
 	poolConfig, err := pgxpool.ParseConfig(dsn.String())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	poolConfig.MaxConns = 15
@@ -40,13 +42,15 @@ func New(ctx context.Context) (*Database, error) {
 
 	pgxPool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := pgxPool.Ping(ctx); err != nil {
-		return nil, err
+		return err
 	}
-	return &Database{db: pgxPool}, nil
+
+	Storage = &Database{db: pgxPool}
+	return nil
 }
 
 func (d *Database) GetDB() *pgxpool.Pool {

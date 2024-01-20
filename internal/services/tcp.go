@@ -2,18 +2,24 @@ package services
 
 import (
 	"bufio"
+	"context"
+	"fmt"
+	"github.com/binsabit/jetinno-kapsi/internal/db"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"log"
 	"math/rand"
 	"net"
 	"regexp"
+	"sync"
 	"time"
 )
 
+var KASPI_QR_URL string
+
 type Client struct {
 	ID      int
-	VmcNo   int64
+	VmcNo   uint64
 	Conn    *net.TCPConn
 	Server  *TCPServer
 	Writer  *bufio.Writer
@@ -22,7 +28,7 @@ type Client struct {
 
 type JetinnoPayload struct {
 	Command        string            `json:"cmd"`
-	VmcNo          int64             `json:"vmc_no"`
+	VmcNo          uint64            `json:"vmc_no"`
 	State          *string           `json:"state,omitempty"`
 	Timestamp      *string           `json:"timestamp,omitempty"`
 	Login_Count    *int64            `json:"login_count,omitempty"`
@@ -48,6 +54,27 @@ type JetinnoPayload struct {
 	PayDone        *bool             `json:"paydone,omitempty"`
 }
 
+type TCPServer struct {
+	Listener *net.TCPListener
+	Clients  *sync.Map
+}
+
+func NewTCPServer(port int) (*TCPServer, error) {
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		return nil, err
+	}
+	tcpListener, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TCPServer{
+		Listener: tcpListener,
+		Clients:  &sync.Map{},
+	}, nil
+
+}
 func (t *TCPServer) RunTCPServer() {
 	for {
 		conn, err := t.Listener.AcceptTCP()
@@ -59,73 +86,103 @@ func (t *TCPServer) RunTCPServer() {
 		go t.HandleConnection(conn)
 	}
 }
-func extractJSON(s string) ([]string, error) {
+
+func extractJSON(s string) ([]JetinnoPayload, error) {
 	re := regexp.MustCompile(`\{([^}]*)\}`)
 
 	matches := re.FindAllStringSubmatch(s, -1)
 
-	var results []string
+	var (
+		results     []string
+		jsonPayload []JetinnoPayload
+	)
+
 	for _, match := range matches {
 		if len(match) == 2 {
 			results = append(results, match[1])
+			var temp JetinnoPayload
+			err := sonic.ConfigFastest.Unmarshal([]byte("{"+match[1]+"}"), &temp)
+			if err != nil {
+				log.Println(err)
+				return nil, err
+			}
 		}
 	}
 
-	return results, nil
+	return jsonPayload, nil
 }
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
-
+	scanner := bufio.NewScanner(conn)
+	writer := bufio.NewWriter(conn)
 	client := &Client{
-		ID:     rand.Int(),
-		Conn:   conn,
-		Server: t,
+		ID:      rand.Int(),
+		Conn:    conn,
+		Scanner: scanner,
+		Writer:  writer,
+		Server:  t,
 	}
-	defer conn.Close()
-	for {
-		lengthByte := make([]byte, 4)
 
-		n, err := conn.Read(lengthByte)
+	defer func() {
+		conn.Close()
+		t.Clients.Delete(client.VmcNo)
+	}()
+
+	//lengthByte := make([]byte, 4)
+	//
+	//n, err := conn.Read(lengthByte)
+	//if err != nil {
+	//	log.Println(err)
+	//	return
+	//}
+	//var length int
+	//for _, val := range lengthByte[:] {
+	//	length += int(val - 48)
+	//}
+	//log.Println(lengthByte[:4])
+	//buf := make([]byte, length)
+	//n, err = conn.Read(buf)
+	//if err != nil {
+	//	log.Println(err)
+	//	return
+	//}
+	//if n < 8 {
+	//	return
+	//}
+	//payload := buf[8:n]
+
+	for client.Scanner.Scan() {
+
+		text := client.Scanner.Text()
+		requests, err := extractJSON(text)
+
 		if err != nil {
-			log.Println(err)
-			return
-		}
-		var length int
-		for _, val := range lengthByte[:] {
-			length += int(val - 48)
-		}
-		log.Println(lengthByte[:4])
-		buf := make([]byte, length)
-		n, err = conn.Read(buf)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		if n < 8 {
-			return
-		}
-		payload := buf[8:n]
-		request := JetinnoPayload{}
-		err = sonic.ConfigFastest.Unmarshal(payload, &request)
-		if err != nil {
-			log.Println(string(buf), lengthByte, buf)
-			log.Println(err)
+			t.Clients.Delete(client.VmcNo)
 			return
 		}
 
-		client.VmcNo = request.VmcNo
+		for _, val := range requests {
+			go func(req JetinnoPayload) {
+				client.VmcNo = req.VmcNo
 
-		t.Clients.Store(request.VmcNo, client)
+				t.Clients.Store(req.VmcNo, client)
 
-		response := client.HandleRequest(request)
-		if response != nil {
-			if err = client.Write(*response); err != nil {
-				log.Println(err)
-				continue
-			}
+				requestPayload, _ := sonic.ConfigFastest.Marshal(req)
 
-			log.Println(client.ID, "request:", string(buf))
+				response := client.HandleRequest(req)
+
+				log.Println(requestPayload)
+
+				if response != nil {
+
+					if err = client.Write(*response); err != nil {
+						log.Println(err)
+						return
+					}
+				}
+			}(val)
 		}
+
 	}
 	//scanner := bufio.NewScanner(conn)
 	//writer := bufio.NewWriter(conn)
@@ -194,13 +251,15 @@ func (c *Client) Write(response JetinnoPayload) error {
 		log.Println(err)
 		return err
 	}
-	log.Println(c.ID, string(data))
+	log.Println(string(data))
 	return nil
 }
 
 func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	var response JetinnoPayload
+	var response *JetinnoPayload
 	switch request.Command {
 	case pkg.COMMAND_HEARDBEAT:
 		response = c.HB(request)
@@ -209,25 +268,36 @@ func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
 		response = c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
 	case pkg.COMMAND_QR_REQUEST:
-		response = c.QR(request)
+		response = c.QR(ctx, request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
 		response = c.CheckOrder(request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	case pkg.COMMAND_PRODUCTDONE_REQUEST:
 		response = c.ProductDone(request)
 	}
-	return &response
+	return response
 }
 
-func (c *Client) HB(request JetinnoPayload) JetinnoPayload {
-	return JetinnoPayload{
+func (c *Client) HB(request JetinnoPayload) *JetinnoPayload {
+	return &JetinnoPayload{
 		VmcNo:   request.VmcNo,
 		Command: pkg.COMMAND_HEARDBEAT,
 	}
 }
 
-func (c *Client) QR(request JetinnoPayload) JetinnoPayload {
-	response := JetinnoPayload{
+func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+	err := db.Storage.CreateOrder(ctx, db.Order{
+		OrderNo:          *request.Order_No,
+		VendingMachineID: request.VmcNo,
+		ProductID:        *request.Pruduct_ID,
+		QRType:           *request.QR_type,
+		Amount:           float32(*request.Amount),
+	})
+
+	if err != nil {
+		return nil
+	}
+	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_QR_RESPONSE,
 		Amount:   request.Amount,
@@ -235,13 +305,15 @@ func (c *Client) QR(request JetinnoPayload) JetinnoPayload {
 		QR_type:  request.QR_type,
 	}
 
-	qr := "https://kaspi.kz/pay/VENDMARKET?service_id=6911&10979=77711122"
+	qr := fmt.Sprintf("%s=%s", KASPI_QR_URL, request.Order_No)
+
 	response.QRCode = &qr
+
 	return response
 }
-func (c *Client) CheckOrder(request JetinnoPayload) JetinnoPayload {
+func (c *Client) CheckOrder(request JetinnoPayload) *JetinnoPayload {
 	done := true
-	response := JetinnoPayload{
+	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
 		Order_No: request.Order_No,
@@ -253,8 +325,8 @@ func (c *Client) CheckOrder(request JetinnoPayload) JetinnoPayload {
 
 	return response
 }
-func (c *Client) ProductDone(request JetinnoPayload) JetinnoPayload {
-	response := JetinnoPayload{
+func (c *Client) ProductDone(request JetinnoPayload) *JetinnoPayload {
+	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,
 		Order_No: request.Order_No,
@@ -263,12 +335,12 @@ func (c *Client) ProductDone(request JetinnoPayload) JetinnoPayload {
 	return response
 }
 
-func (c *Client) Login(request JetinnoPayload) JetinnoPayload {
+func (c *Client) Login(request JetinnoPayload) *JetinnoPayload {
 	carrierCode := "jn9527"
 	dateTime := time.Now().Format(time.DateTime)
 	serverlist := "185.100.67.252"
 	ret := 0
-	response := JetinnoPayload{
+	response := &JetinnoPayload{
 		VmcNo:        request.VmcNo,
 		Command:      pkg.COMMAND_LOGIN_RESPONSE,
 		Carrier_Code: &carrierCode,
