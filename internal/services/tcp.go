@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/internal/db"
@@ -121,52 +122,30 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		conn.Close()
 		t.Clients.Delete(client.VmcNo)
 	}()
-	for {
-		lengthByte := make([]byte, 4)
 
-		n, err := conn.Read(lengthByte)
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		requests, err := extractJSON(scanner.Text())
 		if err != nil {
-			log.Println(err)
 			return
 		}
-		var length int
-		for _, val := range lengthByte[:] {
-			length += int(val - 48)
-		}
-		log.Println(lengthByte[:4])
-		buf := make([]byte, length)
-		n, err = conn.Read(buf)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		if n < 8 {
-			return
-		}
-		payload := buf[8:n]
-		log.Println(string(buf))
-		var req JetinnoPayload
-		err = sonic.ConfigFastest.Unmarshal(payload, &req)
-		if err != nil {
-			log.Println(err)
+		for _, req := range requests {
+			client.VmcNo = req.VmcNo
 
-			return
-		}
-		client.VmcNo = req.VmcNo
+			t.Clients.Store(req.VmcNo, client)
 
-		t.Clients.Store(req.VmcNo, client)
+			requestPayload, _ := sonic.ConfigFastest.Marshal(req)
 
-		requestPayload, _ := sonic.ConfigFastest.Marshal(req)
+			response := client.HandleRequest(req)
 
-		response := client.HandleRequest(req)
+			log.Println(requestPayload)
 
-		log.Println(requestPayload)
+			if response != nil {
 
-		if response != nil {
-
-			if err = client.Write(*response); err != nil {
-				log.Println(err)
-				return
+				if err := client.Write(*response); err != nil {
+					log.Println(err)
+					return
+				}
 			}
 		}
 
