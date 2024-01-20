@@ -16,13 +16,10 @@ func main() {
 	}
 
 	services.KASPI_QR_URL = cfg.KASPI_QR_URL
+
 	err = db.New(context.Background())
 	if err != nil {
 		log.Fatal(err)
-	}
-	if db.Storage == nil {
-		log.Fatal("ss")
-		return
 	}
 
 	tcpServer, err := services.NewTCPServer(cfg.TCPPort)
