@@ -282,6 +282,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 	})
 
 	if err != nil {
+		log.Println(err)
 		return nil
 	}
 	response := &JetinnoPayload{
