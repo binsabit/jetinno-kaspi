@@ -1,7 +1,6 @@
 package services
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/internal/db"
@@ -18,12 +17,10 @@ import (
 var KASPI_QR_URL string
 
 type Client struct {
-	ID      int
-	VmcNo   int64
-	Conn    *net.TCPConn
-	Server  *TCPServer
-	Writer  *bufio.Writer
-	Scanner *bufio.Scanner
+	ID     int
+	VmcNo  int64
+	Conn   *net.TCPConn
+	Server *TCPServer
 }
 
 type JetinnoPayload struct {
@@ -113,74 +110,63 @@ func extractJSON(s string) ([]JetinnoPayload, error) {
 }
 
 func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
-	scanner := bufio.NewScanner(conn)
-	writer := bufio.NewWriter(conn)
+
 	client := &Client{
-		ID:      rand.Int(),
-		Conn:    conn,
-		Scanner: scanner,
-		Writer:  writer,
-		Server:  t,
+		ID:     rand.Int(),
+		Conn:   conn,
+		Server: t,
 	}
 
 	defer func() {
 		conn.Close()
 		t.Clients.Delete(client.VmcNo)
 	}()
+	for {
+		lengthByte := make([]byte, 4)
 
-	//lengthByte := make([]byte, 4)
-	//
-	//n, err := conn.Read(lengthByte)
-	//if err != nil {
-	//	log.Println(err)
-	//	return
-	//}
-	//var length int
-	//for _, val := range lengthByte[:] {
-	//	length += int(val - 48)
-	//}
-	//log.Println(lengthByte[:4])
-	//buf := make([]byte, length)
-	//n, err = conn.Read(buf)
-	//if err != nil {
-	//	log.Println(err)
-	//	return
-	//}
-	//if n < 8 {
-	//	return
-	//}
-	//payload := buf[8:n]
-
-	for client.Scanner.Scan() {
-
-		text := client.Scanner.Text()
-		requests, err := extractJSON(text)
-
+		n, err := conn.Read(lengthByte)
 		if err != nil {
-			t.Clients.Delete(client.VmcNo)
+			log.Println(err)
 			return
 		}
+		var length int
+		for _, val := range lengthByte[:] {
+			length += int(val - 48)
+		}
+		log.Println(lengthByte[:4])
+		buf := make([]byte, length)
+		n, err = conn.Read(buf)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		if n < 8 {
+			return
+		}
+		payload := buf[8:n]
+		var req JetinnoPayload
+		err = sonic.ConfigFastest.Unmarshal(payload, &req)
+		if err != nil {
+			log.Println(err)
 
-		for _, val := range requests {
-			go func(req JetinnoPayload) {
-				client.VmcNo = req.VmcNo
+			return
+		}
+		client.VmcNo = req.VmcNo
 
-				t.Clients.Store(req.VmcNo, client)
+		t.Clients.Store(req.VmcNo, client)
 
-				requestPayload, _ := sonic.ConfigFastest.Marshal(req)
+		requestPayload, _ := sonic.ConfigFastest.Marshal(req)
 
-				response := client.HandleRequest(req)
+		response := client.HandleRequest(req)
 
-				log.Println(requestPayload)
+		log.Println(requestPayload)
 
-				if response != nil {
+		if response != nil {
 
-					if err = client.Write(*response); err != nil {
-						log.Println(err)
-						return
-					}
-				}
-			}(val)
+			if err = client.Write(*response); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
 	}
