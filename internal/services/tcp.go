@@ -293,7 +293,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		QR_type:  request.QR_type,
 	}
 
-	qr := fmt.Sprintf("%s=%s", KASPI_QR_URL, request.Order_No)
+	qr := fmt.Sprintf("%s=%s", KASPI_QR_URL, *request.Order_No)
 
 	response.QRCode = &qr
 
