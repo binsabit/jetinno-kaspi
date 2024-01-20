@@ -19,7 +19,7 @@ var KASPI_QR_URL string
 
 type Client struct {
 	ID      int
-	VmcNo   uint64
+	VmcNo   int64
 	Conn    *net.TCPConn
 	Server  *TCPServer
 	Writer  *bufio.Writer
@@ -28,7 +28,7 @@ type Client struct {
 
 type JetinnoPayload struct {
 	Command        string            `json:"cmd"`
-	VmcNo          uint64            `json:"vmc_no"`
+	VmcNo          int64             `json:"vmc_no"`
 	State          *string           `json:"state,omitempty"`
 	Timestamp      *string           `json:"timestamp,omitempty"`
 	Login_Count    *int64            `json:"login_count,omitempty"`
@@ -270,7 +270,7 @@ func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
 	case pkg.COMMAND_QR_REQUEST:
 		response = c.QR(ctx, request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
-		response = c.CheckOrder(request)
+		response = c.CheckOrder(ctx, request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	case pkg.COMMAND_PRODUCTDONE_REQUEST:
 		response = c.ProductDone(request)
@@ -311,16 +311,23 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 
 	return response
 }
-func (c *Client) CheckOrder(request JetinnoPayload) *JetinnoPayload {
-	done := true
+func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+
+	order, err := db.Storage.GetOrder(ctx, request.VmcNo, *request.Order_No)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	amount := int64(order.Amount)
+
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
 		Order_No: request.Order_No,
-		Amount:   request.Amount,
-		QR_type:  request.QR_type,
-		PayType:  request.PayType,
-		PayDone:  &done,
+		Amount:   &amount,
+		PayType:  &order.QRType,
+		PayDone:  &order.Paid,
 	}
 
 	return response

@@ -8,7 +8,7 @@ import (
 type Order struct {
 	ID               int64
 	OrderNo          string
-	VendingMachineID uint64
+	VendingMachineID int64
 	ProductID        int64
 	QRType           string
 	Amount           float32
