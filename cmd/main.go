@@ -22,7 +22,9 @@ func main() {
 	}
 
 	tcpServer, err := services.NewTCPServer(cfg.TCPPort)
-
+	if err != nil {
+		log.Fatal(err)
+	}
 	server, err := services.NewServer(tcpServer)
 	if err != nil {
 		log.Fatal(err)
