@@ -126,6 +126,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	scanner := bufio.NewScanner(conn)
 	for {
 		if ok := scanner.Scan(); !ok {
+			log.Println("not ok")
 			return
 		}
 		requests, err := extractJSON(scanner.Text())
