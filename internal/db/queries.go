@@ -26,7 +26,7 @@ func (d *Database) CreateOrder(ctx context.Context, order Order) error {
 	query := `INSERT INTO orders 
 				(order_no, vending_machine_id, product_id, qr_type, amount) 
 				VALUES				
-				$1,$2,$3,$4,$5,%6;`
+				($1,$2,$3,$4,$5,%6);`
 
 	params := []interface{}{order.OrderNo, order.VendingMachineID, order.ProductID, order.QRType, order.Amount}
 
