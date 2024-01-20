@@ -31,5 +31,5 @@ func main() {
 	}
 	go server.TCPServer.RunTCPServer()
 
-	log.Fatal(server.RunHTTPServer("3000"))
+	log.Fatal(server.RunHTTPServer(cfg.HTTPPort))
 }

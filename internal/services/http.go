@@ -1,12 +1,13 @@
 package services
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 )
 
-func (s Server) RunHTTPServer(port string) error {
+func (s Server) RunHTTPServer(port int) error {
 	s.SetUpRoutes()
-	return s.Listen(":" + port)
+	return s.Listen(fmt.Sprintf(":%d", port))
 }
 
 func (s *Server) SetUpRoutes() {

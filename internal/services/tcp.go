@@ -60,7 +60,7 @@ type TCPServer struct {
 }
 
 func NewTCPServer(port int) (*TCPServer, error) {
-	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%s", port))
+	addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
 	}
