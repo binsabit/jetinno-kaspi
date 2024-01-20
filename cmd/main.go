@@ -20,6 +20,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if db.Storage == nil {
+		log.Fatal("ss")
+		return
+	}
 
 	tcpServer, err := services.NewTCPServer(cfg.TCPPort)
 	if err != nil {
