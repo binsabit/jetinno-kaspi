@@ -44,3 +44,13 @@ func (d *Database) GetOrder(ctx context.Context, vmcNo int64, orderNo string) (O
 
 	return order, err
 }
+
+func (d *Database) UpdateOrder(ctx context.Context, vmcNo int64, orderNo string) error {
+	query := `UPDATE orders
+              SET status = true,
+                  updated_at = now()
+			WHERE order_no = $1 AND vending_machine_id = $2`
+
+	_, err := d.db.Exec(ctx, query, orderNo, vmcNo)
+	return err
+}

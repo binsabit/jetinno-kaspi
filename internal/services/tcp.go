@@ -260,7 +260,7 @@ func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
 		response = c.CheckOrder(ctx, request)
 	case pkg.COMMAND_PAYDONE_REQUEST:
 	case pkg.COMMAND_PRODUCTDONE_REQUEST:
-		response = c.ProductDone(request)
+		response = c.ProductDone(ctx, request)
 	}
 	return response
 }
@@ -320,7 +320,13 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 
 	return response
 }
-func (c *Client) ProductDone(request JetinnoPayload) *JetinnoPayload {
+func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+	err := db.Storage.UpdateOrder(ctx, request.VmcNo, *request.Order_No)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,
