@@ -134,7 +134,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		for _, val := range lengthByte[:] {
 			length += int(val - 48)
 		}
-		log.Println(lengthByte[:4])
 		buf := make([]byte, length)
 		n, err = conn.Read(buf)
 		if err != nil {
@@ -157,11 +156,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 
 		t.Clients.Store(req.VmcNo, client)
 
-		requestPayload, _ := sonic.ConfigFastest.Marshal(req)
-
 		response := client.HandleRequest(req)
-
-		log.Println(requestPayload)
 
 		if response != nil {
 
@@ -172,42 +167,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		}
 
 	}
-	//scanner := bufio.NewScanner(conn)
-	//writer := bufio.NewWriter(conn)
-	//for scanner.Scan() {
-	//	buffer := scanner.Text()
-	//	log.Println(buffer)
-	//	var req JetinnoPayload
-	//	text, err := extractJSON(buffer)
-	//	if err != nil {
-	//		log.Println(err)
-	//		continue
-	//	}
-	//	for _, val := range text {
-	//		err = sonic.ConfigFastest.Unmarshal([]byte("{"+val+"}"), &req)
-	//		if err != nil {
-	//			log.Println(err, val)
-	//			continue
-	//		}
-	//		client := &Client{
-	//			VmcNo:   req.VmcNo,
-	//			Conn:    conn,
-	//			Scanner: scanner,
-	//			Writer:  writer,
-	//			Server:  t,
-	//		}
-	//
-	//		t.Clients.Store(req.VmcNo, client)
-	//
-	//		response := client.HandleRequest(req)
-	//		if err = client.Write(response); err != nil {
-	//			log.Println(err)
-	//			continue
-	//		}
-	//
-	//		log.Println(clientCode, "request:", val)
-	//	}
-	//}
+
 }
 
 func (c *Client) Write(response JetinnoPayload) error {
