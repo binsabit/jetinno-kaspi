@@ -22,6 +22,16 @@ type Order struct {
 	Paid             bool
 }
 
+func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo int64) (int64, error) {
+	query := `SELECT id FROM vending_machines where no = $1`
+
+	var id int64
+
+	err := d.db.QueryRow(ctx, query, vmcNo).Scan(&id)
+
+	return id, err
+}
+
 func (d *Database) CreateOrder(ctx context.Context, order Order) error {
 	query := `INSERT INTO orders 
 				(order_no, vending_machine_id, product_id, qr_type, amount) 
@@ -46,10 +56,12 @@ func (d *Database) GetOrder(ctx context.Context, vmcNo int64, orderNo string) (O
 }
 
 func (d *Database) UpdateOrder(ctx context.Context, vmcNo int64, orderNo string) error {
-	query := `UPDATE orders
-              SET status = true,
-                  updated_at = now()
-			WHERE order_no = $1 AND vending_machine_id = $2`
+	query := `UPDATE orders o
+              SET o.status = true,
+                  o.updated_at = now()
+            	INNER JOIN vending_machines vm
+              on vm.id = o.vending_machine_id
+			WHERE o.order_no = $1 AND vm.no = $2`
 
 	_, err := d.db.Exec(ctx, query, orderNo, vmcNo)
 	return err
