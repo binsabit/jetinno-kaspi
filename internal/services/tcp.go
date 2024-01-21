@@ -280,7 +280,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		return nil
 	}
 
-	orderID, err := db.Storage.CreateOrder(ctx, db.Order{
+	_, err = db.Storage.CreateOrder(ctx, db.Order{
 		OrderNo:          *request.Order_No,
 		VendingMachineID: id,
 		ProductID:        *request.Pruduct_ID,
@@ -300,7 +300,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		QR_type:  request.QR_type,
 	}
 
-	qr := fmt.Sprintf("%s=%d", KASPI_QR_URL, orderID)
+	qr := fmt.Sprintf("%s=%s", KASPI_QR_URL, *request.Order_No)
 
 	response.QRCode = &qr
 
