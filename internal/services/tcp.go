@@ -273,9 +273,15 @@ func (c *Client) HB(request JetinnoPayload) *JetinnoPayload {
 }
 
 func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	err := db.Storage.CreateOrder(ctx, db.Order{
+	id, err := db.Storage.GetVmdIDByNo(ctx, request.VmcNo)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	err = db.Storage.CreateOrder(ctx, db.Order{
 		OrderNo:          *request.Order_No,
-		VendingMachineID: request.VmcNo,
+		VendingMachineID: id,
 		ProductID:        *request.Pruduct_ID,
 		QRType:           *request.QR_type,
 		Amount:           float32(*request.Amount),
