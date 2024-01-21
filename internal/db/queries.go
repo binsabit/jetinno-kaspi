@@ -32,17 +32,18 @@ func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, error
 	return id, err
 }
 
-func (d *Database) CreateOrder(ctx context.Context, order Order) error {
+func (d *Database) CreateOrder(ctx context.Context, order Order) (int64, error) {
 	query := `INSERT INTO orders 
 				(order_no, vending_machine_id, product_id, qr_type, amount) 
 				VALUES				
-				($1,$2,$3,$4,$5);`
+				($1,$2,$3,$4,$5)
+				RETURNIGN id`
 
 	params := []interface{}{order.OrderNo, order.VendingMachineID, order.ProductID, order.QRType, order.Amount}
+	var id int64
+	err := d.db.QueryRow(ctx, query, params...).Scan(&id)
 
-	_, err := d.db.Exec(ctx, query, params...)
-
-	return err
+	return id, err
 }
 
 func (d *Database) GetOrder(ctx context.Context, vmcNo int64, orderNo string) (Order, error) {
