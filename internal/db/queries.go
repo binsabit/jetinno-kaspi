@@ -22,7 +22,7 @@ type Order struct {
 	Paid             bool
 }
 
-func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo int64) (int64, error) {
+func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, error) {
 	query := `SELECT id FROM vending_machines where no = $1`
 
 	var id int64

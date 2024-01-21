@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net"
 	"regexp"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -273,7 +274,7 @@ func (c *Client) HB(request JetinnoPayload) *JetinnoPayload {
 }
 
 func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	id, err := db.Storage.GetVmdIDByNo(ctx, request.VmcNo)
+	id, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
 	if err != nil {
 		log.Println(err)
 		return nil
