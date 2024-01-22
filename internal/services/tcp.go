@@ -2,10 +2,12 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/internal/db"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
+	"github.com/jackc/pgx/v5"
 	"log"
 	"math/rand"
 	"net"
@@ -240,6 +242,10 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		return nil
 	}
 
+	_, err = db.Storage.GetOrder(ctx, id, *request.Order_No)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
 	_, err = db.Storage.CreateOrder(ctx, db.Order{
 		OrderNo:          *request.Order_No,
 		VendingMachineID: id,
