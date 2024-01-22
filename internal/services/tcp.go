@@ -132,9 +132,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		if err != nil {
 			log.Println(err)
 			if errors.Is(err, io.EOF) {
-				continue
+				return
 			}
-			return
+			continue
 		}
 		var length int
 		for _, val := range lengthByte[:] {
@@ -145,9 +145,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		if err != nil {
 			log.Println(err)
 			if errors.Is(err, io.EOF) {
-				continue
+				return
 			}
-			return
+			continue
 		}
 		if n < 8 {
 			return
