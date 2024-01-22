@@ -261,21 +261,21 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 
 	if err != nil {
 		log.Println(err)
-		return nil
+
+		response := &JetinnoPayload{
+			VmcNo:    request.VmcNo,
+			Command:  pkg.COMMAND_QR_RESPONSE,
+			Amount:   request.Amount,
+			Order_No: request.Order_No,
+			QR_type:  request.QR_type,
+		}
+
+		qr := fmt.Sprintf("%s=%s", KASPI_QR_URL, *request.Order_No)
+
+		response.QRCode = &qr
+
 	}
-	response := &JetinnoPayload{
-		VmcNo:    request.VmcNo,
-		Command:  pkg.COMMAND_QR_RESPONSE,
-		Amount:   request.Amount,
-		Order_No: request.Order_No,
-		QR_type:  request.QR_type,
-	}
-
-	qr := fmt.Sprintf("%s=%s", KASPI_QR_URL, *request.Order_No)
-
-	response.QRCode = &qr
-
-	return response
+	return nil
 }
 func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
 
