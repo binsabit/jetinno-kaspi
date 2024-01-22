@@ -134,10 +134,10 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		}
 		var length int
 		for i, val := range lengthByte[:] {
-			length += int(val-48) + i*48
-			if i >= 1 {
-
+			if val-48 > 0 {
+				length += int(val-48) + i*48
 			}
+
 		}
 		buf := make([]byte, length)
 		n, err = conn.Read(buf)
