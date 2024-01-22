@@ -133,8 +133,11 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			return
 		}
 		var length int
-		for _, val := range lengthByte[:] {
-			length += int(val - 48)
+		for i, val := range lengthByte[:] {
+			length += int(val-48) + i*48
+			if i >= 1 {
+
+			}
 		}
 		buf := make([]byte, length)
 		n, err = conn.Read(buf)
@@ -254,35 +257,36 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		return nil
 	}
 
-	if errors.Is(err, pgx.ErrNoRows) {
-
-		orderID, err := db.Storage.CreateOrder(ctx, db.Order{
-			OrderNo:          *request.Order_No,
-			VendingMachineID: id,
-			ProductID:        *request.Pruduct_ID,
-			QRType:           *request.QR_type,
-			Amount:           float32(*request.Amount),
-		})
-
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-		response := &JetinnoPayload{
-			VmcNo:    request.VmcNo,
-			Command:  pkg.COMMAND_QR_RESPONSE,
-			Amount:   request.Amount,
-			Order_No: request.Order_No,
-			QR_type:  request.QR_type,
-		}
-
-		qr := fmt.Sprintf("%s=%d", KASPI_QR_URL, orderID)
-
-		response.QRCode = &qr
-
-		return response
+	if err != nil {
+		return nil
 	}
-	return nil
+
+	orderID, err := db.Storage.CreateOrder(ctx, db.Order{
+		OrderNo:          *request.Order_No,
+		VendingMachineID: id,
+		ProductID:        *request.Pruduct_ID,
+		QRType:           *request.QR_type,
+		Amount:           float32(*request.Amount),
+	})
+
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	response := &JetinnoPayload{
+		VmcNo:    request.VmcNo,
+		Command:  pkg.COMMAND_QR_RESPONSE,
+		Amount:   request.Amount,
+		Order_No: request.Order_No,
+		QR_type:  request.QR_type,
+	}
+
+	qr := fmt.Sprintf("%s=%d", KASPI_QR_URL, orderID)
+
+	response.QRCode = &qr
+
+	return response
+
 }
 func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
 
