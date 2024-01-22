@@ -159,8 +159,14 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 
 		response := client.HandleRequest(req)
 
-		if response != nil {
+		data, err := sonic.ConfigFastest.Marshal(response)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
+		if response != nil {
+			log.Println(data)
 			if err = client.Write(*response); err != nil {
 				log.Println(err)
 				return
