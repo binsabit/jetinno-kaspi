@@ -242,7 +242,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		return nil
 	}
 
-	_, err = db.Storage.GetOrder(ctx, id, *request.Order_No)
+	_, err = db.Storage.GetOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		log.Println(err)
 		return nil
@@ -275,7 +275,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 }
 func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
 
-	order, err := db.Storage.GetOrder(ctx, request.VmcNo, *request.Order_No)
+	order, err := db.Storage.GetOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -295,7 +295,7 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 	return response
 }
 func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	err := db.Storage.UpdateOrder(ctx, request.VmcNo, *request.Order_No)
+	err := db.Storage.UpdateOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
 	if err != nil {
 		log.Println(err)
 		return nil
