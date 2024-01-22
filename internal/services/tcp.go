@@ -8,6 +8,7 @@ import (
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"github.com/jackc/pgx/v5"
+	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -130,6 +131,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		n, err := conn.Read(lengthByte)
 		if err != nil {
 			log.Println(err)
+			if errors.Is(err, io.EOF) {
+				continue
+			}
 			return
 		}
 		var length int
@@ -140,6 +144,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
+			if errors.Is(err, io.EOF) {
+				continue
+			}
 			return
 		}
 		if n < 8 {
@@ -151,7 +158,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		err = sonic.ConfigFastest.Unmarshal(payload, &req)
 		if err != nil {
 			log.Println(err)
-
 			return
 		}
 		client.VmcNo = req.VmcNo
@@ -247,6 +253,11 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		log.Println(err)
 		return nil
 	}
+
+	if err != nil {
+		return nil
+	}
+
 	_, err = db.Storage.CreateOrder(ctx, db.Order{
 		OrderNo:          *request.Order_No,
 		VendingMachineID: id,
