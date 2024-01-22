@@ -8,7 +8,6 @@ import (
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"github.com/jackc/pgx/v5"
-	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -131,10 +130,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		n, err := conn.Read(lengthByte)
 		if err != nil {
 			log.Println(err)
-			if errors.Is(err, io.EOF) {
-				return
-			}
-			continue
+			return
 		}
 		var length int
 		for _, val := range lengthByte[:] {
@@ -144,10 +140,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
-			if errors.Is(err, io.EOF) {
-				return
-			}
-			continue
+			return
 		}
 		if n < 8 {
 			return
