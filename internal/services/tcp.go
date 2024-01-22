@@ -247,33 +247,20 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		return nil
 	}
 
-	if err != nil {
-		return nil
-	}
+	if errors.Is(err, pgx.ErrNoRows) {
 
-	_, err = db.Storage.CreateOrder(ctx, db.Order{
-		OrderNo:          *request.Order_No,
-		VendingMachineID: id,
-		ProductID:        *request.Pruduct_ID,
-		QRType:           *request.QR_type,
-		Amount:           float32(*request.Amount),
-	})
+		_, err = db.Storage.CreateOrder(ctx, db.Order{
+			OrderNo:          *request.Order_No,
+			VendingMachineID: id,
+			ProductID:        *request.Pruduct_ID,
+			QRType:           *request.QR_type,
+			Amount:           float32(*request.Amount),
+		})
 
-	if err != nil {
-		log.Println(err)
-
-		response := &JetinnoPayload{
-			VmcNo:    request.VmcNo,
-			Command:  pkg.COMMAND_QR_RESPONSE,
-			Amount:   request.Amount,
-			Order_No: request.Order_No,
-			QR_type:  request.QR_type,
+		if err != nil {
+			log.Println(err)
+			return nil
 		}
-
-		qr := fmt.Sprintf("%s=%s", KASPI_QR_URL, *request.Order_No)
-
-		response.QRCode = &qr
-
 	}
 	return nil
 }
