@@ -244,6 +244,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 
 	_, err = db.Storage.GetOrder(ctx, id, *request.Order_No)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		log.Println(err)
 		return nil
 	}
 	_, err = db.Storage.CreateOrder(ctx, db.Order{
