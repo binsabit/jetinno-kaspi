@@ -36,7 +36,7 @@ func (d *Database) CreateOrder(ctx context.Context, order Order) (int64, error) 
 	query := `INSERT INTO orders 
 				(order_no, vending_machine_id, product_id, qr_type, amount, created_at, updated_at) 
 				VALUES				
-				($1,$2,$3,$4,$5)
+				($1,$2,$3,$4,$5,$6,$7)
 				RETURNING id`
 	now := time.Now()
 	params := []interface{}{order.OrderNo, order.VendingMachineID, order.ProductID, order.QRType, order.Amount, now, now}
