@@ -226,7 +226,6 @@ func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
 	case pkg.COMMAND_LOGIN_REQUEST:
 		response = c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
-		response = nil
 	case pkg.COMMAND_QR_REQUEST:
 		response = c.QR(ctx, request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
@@ -258,7 +257,7 @@ func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload
 		return nil
 	}
 
-	if err != nil {
+	if err == nil {
 		return nil
 	}
 
