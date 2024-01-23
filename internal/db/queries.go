@@ -60,10 +60,11 @@ func (d *Database) GetOrder(ctx context.Context, vmcNo string, orderNo string) (
 }
 
 func (d *Database) UpdateOrder(ctx context.Context, vmcNo string, orderNo string) error {
-	query := `UPDATE orders o
+	query := `UPDATE o
               SET o.status = true,
                   o.updated_at = now()
-            	INNER JOIN vending_machines vm
+             FROM  orders o
+              INNER JOIN vending_machines vm
               on vm.id = o.vending_machine_id
 			WHERE o.order_no = $1 AND vm.no = $2`
 
