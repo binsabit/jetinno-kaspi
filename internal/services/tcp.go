@@ -311,16 +311,10 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 	return response
 }
 func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	err := db.Storage.UpdateOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
 
 	response := &JetinnoPayload{
-		VmcNo:    request.VmcNo,
-		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,
-		Order_No: request.Order_No,
+		VmcNo:   request.VmcNo,
+		Command: pkg.COMMAND_PRODUCTDONE_RESPONSE,
 	}
 
 	return response
