@@ -159,6 +159,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		}
 		client.VmcNo = req.VmcNo
 
+		if req.Command == pkg.COMMAND_MACHINESTATUS_REQUEST {
+			continue
+		}
 		t.Clients.Store(req.VmcNo, client)
 
 		response := client.HandleRequest(req)
