@@ -139,7 +139,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 		}
-		buf := make([]byte, 1000)
+		buf := make([]byte, 300)
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
@@ -311,7 +311,12 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 	return response
 }
 func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	err := db.Storage.UpdateOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
+	id, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	err = db.Storage.UpdateOrder(ctx, id, *request.Order_No)
 	if err != nil {
 		log.Println(err)
 		return nil
