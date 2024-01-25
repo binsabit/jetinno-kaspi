@@ -49,7 +49,7 @@ type JetinnoPayload struct {
 	Amount         *int64            `json:"Amount,omitempty"`
 	Order_No       *string           `json:"order_no,omitempty"`
 	QRCode         *string           `json:"qrcode,omitempty"`
-	Product_Amount *string           `json:"product_amount,omitempty"`
+	Product_Amount *int              `json:"product_amount,omitempty"`
 	PayType        *string           `json:"paytype,omitempty"`
 	PayDone        *bool             `json:"paydone,omitempty"`
 }
@@ -245,6 +245,29 @@ func (c *Client) HB(request JetinnoPayload) *JetinnoPayload {
 	}
 }
 
+func (c *Client) PayDone(ctx context.Context, order db.Order) *JetinnoPayload {
+	id, err := db.Storage.GetVmdIDByNo(ctx, order.VendingMachineNo)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	err = db.Storage.UpdateOrder(ctx, id, order.OrderNo, 1)
+	if err != nil {
+		return nil
+	}
+
+	vmcNo, _ := strconv.ParseInt(order.VendingMachineNo, 10, 64)
+	amount := int(order.Amount * 100)
+	return &JetinnoPayload{
+		VmcNo:          vmcNo,
+		Command:        pkg.COMMAND_PAYDONE_REQUEST,
+		Product_Amount: &amount,
+		Order_No:       &order.OrderNo,
+		PayDone:        &order.Paid,
+		PayType:        &order.QRType,
+	}
+}
+
 func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
 	id, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
 	if err != nil {
@@ -299,6 +322,22 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 
 	amount := int64(order.Amount)
 
+	if order.Paid && order.Status == 2 {
+		return nil
+	}
+
+	if order.Paid && order.Status == 0 {
+		id, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
+		if err != nil {
+			return nil
+		}
+
+	}
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
@@ -316,7 +355,7 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 		log.Println(err)
 		return nil
 	}
-	err = db.Storage.UpdateOrder(ctx, id, *request.Order_No)
+	err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
 	if err != nil {
 		log.Println(err)
 		return nil

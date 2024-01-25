@@ -8,6 +8,7 @@ import (
 type Order struct {
 	ID               int64
 	OrderNo          string
+	VendingMachineNo string
 	VendingMachineID int64
 	ProductID        int64
 	QRType           string
@@ -16,7 +17,7 @@ type Order struct {
 	UpdatedAt        time.Time
 	TxnID            uint64
 	TxnDate          string
-	Status           bool
+	Status           int
 	Comment          string
 	TxnSum           float64
 	Paid             bool
@@ -47,24 +48,37 @@ func (d *Database) CreateOrder(ctx context.Context, order Order) (int64, error) 
 }
 
 func (d *Database) GetOrder(ctx context.Context, vmcNo string, orderNo string) (Order, error) {
-	query := `SELECT qr_type, paid, amount 
+	query := `SELECT qr_type, paid, amount, status 
 			FROM orders	
 			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
 			 WHERE orders.order_no = $1 AND  vending_machines.no= $2`
 
 	var order Order
 
-	err := d.db.QueryRow(ctx, query, orderNo, vmcNo).Scan(&order.QRType, &order.Paid, &order.Amount)
+	err := d.db.QueryRow(ctx, query, orderNo, vmcNo).Scan(&order.QRType, &order.Paid, &order.Amount, &order.Status)
 
 	return order, err
 }
 
-func (d *Database) UpdateOrder(ctx context.Context, vmcID int64, orderNo string) error {
-	query := `UPDATE orders 
-              SET status = true,
-                  updated_at = now()
-			WHERE order_no = $1 AND vending_machine_id = $2`
+func (d *Database) GetOrderByID(ctx context.Context, orderID int64) (Order, error) {
+	query := `SELECT orders.id, qr_type, paid, amount, status, no 
+			FROM orders	
+			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
+			 WHERE orders.id = $1`
 
-	_, err := d.db.Exec(ctx, query, orderNo, vmcID)
+	var order Order
+
+	err := d.db.QueryRow(ctx, query, orderID).Scan(&order.ID, &order.QRType, &order.Paid, &order.Amount, &order.Status, &order.OrderNo)
+
+	return order, err
+}
+
+func (d *Database) UpdateOrder(ctx context.Context, vmcID int64, orderNo string, status int) error {
+	query := `UPDATE orders 
+              SET status = $1,
+                  updated_at = now()
+			WHERE order_no = $2 AND vending_machine_id = $3`
+
+	_, err := d.db.Exec(ctx, query, status, orderNo, vmcID)
 	return err
 }
