@@ -253,6 +253,7 @@ func (c *Client) PayDone(ctx context.Context, order db.Order) *JetinnoPayload {
 	}
 	err = db.Storage.UpdateOrder(ctx, id, order.OrderNo, 1)
 	if err != nil {
+		log.Println(err)
 		return nil
 	}
 
