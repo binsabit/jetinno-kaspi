@@ -61,7 +61,7 @@ func (d *Database) GetOrder(ctx context.Context, vmcNo string, orderNo string) (
 }
 
 func (d *Database) GetOrderByID(ctx context.Context, orderID int64) (Order, error) {
-	query := `SELECT orders.id, qr_type, paid, amount, status, no 
+	query := `SELECT orders.id, qr_type, paid, amount, orders.status, no 
 			FROM orders	
 			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
 			 WHERE orders.id = $1`
