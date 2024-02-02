@@ -70,5 +70,11 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 			log.Println("ENSURE PAYMENT PAY DONE ERROR: ", err)
 		}
 		time.Sleep(2 * time.Second)
+
+		order, err = db.Storage.GetOrderByID(context.Background(), order.ID)
+		if err != nil {
+			log.Println("ENSURE PAYMENT PAY DONE ERROR: ", err)
+			return
+		}
 	}
 }
