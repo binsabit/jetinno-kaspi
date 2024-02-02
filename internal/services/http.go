@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"github.com/binsabit/jetinno-kapsi/internal/db"
 	"github.com/gofiber/fiber/v2"
 	"log"
 	"strconv"
+	"time"
 )
 
 func (s Server) RunHTTPServer(port int) error {
@@ -34,25 +36,39 @@ func (s *Server) SetUpRoutes() {
 			return ctx.SendStatus(fiber.StatusInternalServerError)
 		}
 
-		vmcno, _ := strconv.Atoi(order.VendingMachineNo)
-		val, ok := s.TCPServer.Clients.Load(vmcno)
-		if !ok {
-			return ctx.SendStatus(fiber.StatusNotFound)
-		}
-
-		res := val.(*Client).PayDone(ctx.Context(), order)
-		if res == nil {
-			return ctx.SendStatus(fiber.StatusNotFound)
-		}
-
-		err = val.(*Client).Write(*res)
-
-		if err != nil {
-			log.Println("http-server", err)
-			return ctx.SendStatus(fiber.StatusInternalServerError)
-		}
+		go s.EnsureOrderPayment(order)
 
 		return ctx.SendStatus(fiber.StatusOK)
 
 	})
+}
+
+func (s *Server) EnsureOrderPayment(order db.Order) {
+
+	if order.Status != 0 {
+		return
+	}
+
+	vmcno, _ := strconv.Atoi(order.VendingMachineNo)
+
+	for order.Status == 0 {
+
+		val, ok := s.TCPServer.Clients.Load(vmcno)
+		if !ok {
+			return
+		}
+
+		res := val.(*Client).PayDone(context.Background(), order)
+		if res == nil {
+			log.Println("ENSURE PAYMENT PAY DONE ERROR")
+			return
+		}
+
+		err := val.(*Client).Write(*res)
+
+		if err != nil {
+			log.Println("ENSURE PAYMENT PAY DONE ERROR: ", err)
+		}
+		time.Sleep(2 * time.Second)
+	}
 }
