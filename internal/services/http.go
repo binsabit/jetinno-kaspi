@@ -36,7 +36,7 @@ func (s *Server) SetUpRoutes() {
 			return ctx.SendStatus(fiber.StatusInternalServerError)
 		}
 
-		go s.EnsureOrderPayment(order)
+		s.EnsureOrderPayment(order)
 
 		return ctx.SendStatus(fiber.StatusOK)
 
