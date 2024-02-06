@@ -24,13 +24,13 @@ func (s *Server) SetUpRoutes() {
 		var input struct {
 			OrderID int64 `json:"order_id"`
 		}
-		log.Println("ORDER ID", input.OrderID)
 
 		if err := ctx.BodyParser(&input); err != nil {
 			log.Println("http-server:", err)
 			return ctx.SendStatus(fiber.StatusBadRequest)
 		}
 
+		log.Println("ORDER ID", input.OrderID)
 		order, err := db.Storage.GetOrderByID(ctx.Context(), input.OrderID)
 		if err != nil {
 			log.Println("http-server:", err)
@@ -53,7 +53,7 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 	vmcno, _ := strconv.Atoi(order.VendingMachineNo)
 
 	for order.Status == 0 {
-		log.Println("trying to ")
+		log.Println("trying to ", vmcno)
 		val, ok := s.TCPServer.Clients.Load(vmcno)
 		if !ok {
 			return
