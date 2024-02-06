@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"log"
 	"strconv"
-	"time"
 )
 
 func (s Server) RunHTTPServer(port int) error {
@@ -69,7 +68,6 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 		if err != nil {
 			log.Println("ENSURE PAYMENT PAY DONE ERROR: ", err)
 		}
-		time.Sleep(2 * time.Second)
 
 		order, err = db.Storage.GetOrderByID(context.Background(), order.ID)
 		if err != nil {
