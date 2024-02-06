@@ -52,7 +52,7 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 	vmcno, _ := strconv.Atoi(order.VendingMachineNo)
 
 	for order.Status == 0 {
-
+		log.Println("trying to ")
 		val, ok := s.TCPServer.Clients.Load(vmcno)
 		if !ok {
 			return
