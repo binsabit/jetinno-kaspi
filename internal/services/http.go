@@ -20,12 +20,14 @@ func (s *Server) SetUpRoutes() {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
 
-	s.Post("pay-done", func(ctx *fiber.Ctx) error {
+	s.Post("/pay-done", func(ctx *fiber.Ctx) error {
 		var input struct {
 			OrderID int64 `json:"order_id"`
 		}
+		log.Println("ORDER ID", input.OrderID)
 
 		if err := ctx.BodyParser(&input); err != nil {
+			log.Println("http-server:", err)
 			return ctx.SendStatus(fiber.StatusBadRequest)
 		}
 
