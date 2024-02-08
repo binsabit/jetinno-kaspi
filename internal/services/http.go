@@ -50,12 +50,16 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 		return
 	}
 
-	vmcno, _ := strconv.Atoi(order.VendingMachineNo)
-
+	vmcno, err := strconv.ParseInt(order.VendingMachineNo, 10, 64)
+	if err != nil {
+		log.Println("could not parse vcmno")
+		return
+	}
 	for order.Status == 0 {
 		log.Println("trying to ", vmcno)
 		val, ok := s.TCPServer.Clients.Load(vmcno)
 		if !ok {
+			log.Println("did not found vcmno")
 			return
 		}
 
@@ -69,6 +73,7 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 
 		if err != nil {
 			log.Println("ENSURE PAYMENT PAY DONE ERROR: ", err)
+			return
 		}
 
 		order, err = db.Storage.GetOrderByID(context.Background(), order.ID)
