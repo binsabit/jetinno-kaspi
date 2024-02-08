@@ -139,7 +139,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 		}
-		buf := make([]byte, 280)
+		buf := make([]byte, 290)
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
