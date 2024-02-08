@@ -139,7 +139,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 		}
-		buf := make([]byte, 400)
+		buf := make([]byte, length)
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
@@ -175,6 +175,15 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				log.Println(err)
 				return
 			}
+			if req.Command == pkg.COMMAND_QR_REQUEST {
+				order := db.Order{OrderNo: *req.Order_No, VendingMachineNo: strconv.FormatInt(req.VmcNo, 10)}
+				res := client.PayDone(context.Background(), order)
+				if err = client.Write(*res); err != nil {
+					log.Println(err)
+					return
+				}
+			}
+
 		}
 
 	}
