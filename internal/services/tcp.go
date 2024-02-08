@@ -139,7 +139,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 		}
-		buf := make([]byte, length)
+		buf := make([]byte, 272)
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(err)
@@ -149,7 +149,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			return
 		}
 		payload := buf[8:n]
-		log.Println(string(lengthByte))
+		log.Println(length)
 		log.Println(string(payload))
 		var req JetinnoPayload
 		err = sonic.ConfigFastest.Unmarshal(payload, &req)
