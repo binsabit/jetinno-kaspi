@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -101,7 +102,9 @@ func extractJSON(s string) ([]JetinnoPayload, error) {
 		if len(match) == 2 {
 			results = append(results, match[1])
 			var temp JetinnoPayload
-			err := sonic.ConfigFastest.Unmarshal([]byte("{"+match[1]+"}"), &temp)
+			i := []byte("{" + match[1] + "}")
+			log.Println("request:", string(i))
+			err := sonic.ConfigFastest.Unmarshal(i, &temp)
 			if err != nil {
 				log.Println(err)
 				return nil, err
@@ -124,68 +127,81 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		conn.Close()
 		t.Clients.Delete(client.VmcNo)
 	}()
-	for {
-		lengthByte := make([]byte, 4)
 
-		n, err := conn.Read(lengthByte)
+	scanner := bufio.NewScanner(conn)
+
+	for scanner.Scan() {
+		//lengthByte := make([]byte, 4)
+		//
+		//n, err := conn.Read(lengthByte)
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
+		//var length int
+		//for i, val := range lengthByte[:] {
+		//	if val-48 > 0 {
+		//		length += int(val-48) + i*48
+		//	}
+		//
+		//}
+		//buf := make([]byte, 300)
+		//n, err = conn.Read(buf)
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
+		//if n < 8 {
+		//	return
+		//}
+		//payload := buf[8:n]
+		//log.Println(length)
+		//log.Println(string(payload))
+		//var req JetinnoPayload
+		//err = sonic.ConfigFastest.Unmarshal(payload, &req)
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
+
+		text := scanner.Text()
+
+		request, err := extractJSON(text)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		var length int
-		for i, val := range lengthByte[:] {
-			if val-48 > 0 {
-				length += int(val-48) + i*48
-			}
+		for _, r := range request {
 
-		}
-		buf := make([]byte, 300)
-		n, err = conn.Read(buf)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		if n < 8 {
-			return
-		}
-		payload := buf[8:n]
-		log.Println(length)
-		log.Println(string(payload))
-		var req JetinnoPayload
-		err = sonic.ConfigFastest.Unmarshal(payload, &req)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		client.VmcNo = req.VmcNo
+			client.VmcNo = r.VmcNo
 
-		t.Clients.Store(req.VmcNo, client)
+			t.Clients.Store(r.VmcNo, client)
 
-		response := client.HandleRequest(req)
+			response := client.HandleRequest(r)
 
-		data, err := sonic.ConfigFastest.Marshal(response)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		if response != nil {
-			log.Println(string(data))
-			if err = client.Write(*response); err != nil {
+			data, err := sonic.ConfigFastest.Marshal(response)
+			if err != nil {
 				log.Println(err)
-				return
+				continue
 			}
-			//if req.Command == pkg.COMMAND_QR_REQUEST {
-			//	order := db.Order{OrderNo: *req.Order_No, VendingMachineNo: strconv.FormatInt(req.VmcNo, 10)}
-			//	res := client.PayDone(context.Background(), order)
-			//	if err = client.Write(*res); err != nil {
-			//		log.Println(err)
-			//		return
-			//	}
-			//}
 
+			if response != nil {
+				log.Println(string(data))
+				if err = client.Write(*response); err != nil {
+					log.Println(err)
+					return
+				}
+				//if req.Command == pkg.COMMAND_QR_REQUEST {
+				//	order := db.Order{OrderNo: *req.Order_No, VendingMachineNo: strconv.FormatInt(req.VmcNo, 10)}
+				//	res := client.PayDone(context.Background(), order)
+				//	if err = client.Write(*res); err != nil {
+				//		log.Println(err)
+				//		return
+				//	}
+				//}
+
+			}
 		}
-
 	}
 
 }
