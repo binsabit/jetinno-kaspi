@@ -181,14 +181,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 
 			response := client.HandleRequest(r)
 
-			data, err := sonic.ConfigFastest.Marshal(response)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			log.Println("=====", string(data))
 			if response != nil {
-				log.Println(string(data))
 				if err = client.Write(*response); err != nil {
 					log.Println(err)
 					return
