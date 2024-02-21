@@ -171,6 +171,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			log.Println(err)
 			return
 		}
+		fmt.Println(len(request))
 		for _, r := range request {
 
 			client.VmcNo = r.VmcNo
