@@ -184,7 +184,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				log.Println(err)
 				continue
 			}
-
+			log.Println(string(data))
 			if response != nil {
 				log.Println(string(data))
 				if err = client.Write(*response); err != nil {
