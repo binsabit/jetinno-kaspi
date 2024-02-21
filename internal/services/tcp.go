@@ -109,6 +109,7 @@ func extractJSON(s string) ([]JetinnoPayload, error) {
 				log.Println(err)
 				return nil, err
 			}
+			jsonPayload = append(jsonPayload, temp)
 		}
 	}
 
