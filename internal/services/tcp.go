@@ -230,7 +230,7 @@ func (c *Client) Write(response JetinnoPayload) error {
 		log.Println(err)
 		return err
 	}
-	log.Println(string(data))
+	log.Println(c.ID, string(data))
 	return nil
 }
 
