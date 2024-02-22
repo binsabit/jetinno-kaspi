@@ -141,6 +141,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		//log.Println(text, client.ID)
 
 		payload := []byte{}
+
+		brackets := 0
 		for {
 			b := make([]byte, 1)
 			_, err := conn.Read(b)
@@ -148,8 +150,14 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 				log.Println(err)
 				return
 			}
+			if b[0] == '{' {
+				brackets++
+			}
 			payload = append(payload, b...)
 			if b[0] == '}' {
+				brackets--
+			}
+			if brackets == 0 {
 				break
 			}
 
