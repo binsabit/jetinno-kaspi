@@ -131,74 +131,78 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 
 	scanner := bufio.NewScanner(conn)
 	for {
-		for scanner.Scan() {
-			//lengthByte := make([]byte, 4)
-			//
-			//n, err := conn.Read(lengthByte)
-			//if err != nil {
-			//	log.Println(err)
-			//	return
-			//}
-			//var length int
-			//for i, val := range lengthByte[:] {
-			//	if val-48 > 0 {
-			//		length += int(val-48) + i*48
-			//	}
-			//
-			//}
-			//buf := make([]byte, 300)
-			//n, err = conn.Read(buf)
-			//if err != nil {
-			//	log.Println(err)
-			//	return
-			//}
-			//if n < 8 {
-			//	return
-			//}
-			//payload := buf[8:n]
-			//log.Println(length)
-			//log.Println(string(payload))
-			//var req JetinnoPayload
-			//err = sonic.ConfigFastest.Unmarshal(payload, &req)
-			//if err != nil {
-			//	log.Println(err)
-			//	return
-			//}
 
-			text := scanner.Text()
+		scannable := scanner.Scan()
+		if !scannable {
+			continue
+		}
+		//lengthByte := make([]byte, 4)
+		//
+		//n, err := conn.Read(lengthByte)
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
+		//var length int
+		//for i, val := range lengthByte[:] {
+		//	if val-48 > 0 {
+		//		length += int(val-48) + i*48
+		//	}
+		//
+		//}
+		//buf := make([]byte, 300)
+		//n, err = conn.Read(buf)
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
+		//if n < 8 {
+		//	return
+		//}
+		//payload := buf[8:n]
+		//log.Println(length)
+		//log.Println(string(payload))
+		//var req JetinnoPayload
+		//err = sonic.ConfigFastest.Unmarshal(payload, &req)
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
 
-			request, err := extractJSON(text)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			fmt.Println(len(request))
-			for _, r := range request {
+		text := scanner.Text()
 
-				client.VmcNo = r.VmcNo
+		request, err := extractJSON(text)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		fmt.Println(len(request))
+		for _, r := range request {
 
-				t.Clients.Store(r.VmcNo, client)
+			client.VmcNo = r.VmcNo
 
-				response := client.HandleRequest(r)
+			t.Clients.Store(r.VmcNo, client)
 
-				if response != nil {
-					if err = client.Write(*response); err != nil {
-						log.Println(err)
-						return
-					}
-					//if req.Command == pkg.COMMAND_QR_REQUEST {
-					//	order := db.Order{OrderNo: *req.Order_No, VendingMachineNo: strconv.FormatInt(req.VmcNo, 10)}
-					//	res := client.PayDone(context.Background(), order)
-					//	if err = client.Write(*res); err != nil {
-					//		log.Println(err)
-					//		return
-					//	}
-					//}
+			response := client.HandleRequest(r)
 
+			if response != nil {
+				if err = client.Write(*response); err != nil {
+					log.Println(err)
+					return
 				}
+				//if req.Command == pkg.COMMAND_QR_REQUEST {
+				//	order := db.Order{OrderNo: *req.Order_No, VendingMachineNo: strconv.FormatInt(req.VmcNo, 10)}
+				//	res := client.PayDone(context.Background(), order)
+				//	if err = client.Write(*res); err != nil {
+				//		log.Println(err)
+				//		return
+				//	}
+				//}
+
 			}
 		}
 	}
+
 }
 
 func (c *Client) Write(response JetinnoPayload) error {
