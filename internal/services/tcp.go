@@ -131,12 +131,13 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	}()
 
 	reader := bufio.NewReader(conn)
+Outer:
 	for {
 
 		text, _, err := reader.ReadLine()
 		if err != nil && !errors.Is(err, io.EOF) {
 			log.Println(err)
-			return
+			break Outer
 		}
 		if err != nil && errors.Is(err, io.EOF) {
 			continue
@@ -179,7 +180,8 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		request, err := extractJSON(string(text))
 		if err != nil {
 			log.Println(err)
-			return
+			break Outer
+
 		}
 		fmt.Println(len(request))
 		for _, r := range request {
@@ -207,13 +209,13 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 		}
 	}
+	log.Println("finished")
 
 }
 
 func (c *Client) Write(response JetinnoPayload) error {
 	payload, err := sonic.ConfigFastest.Marshal(response)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -236,7 +238,6 @@ func (c *Client) Write(response JetinnoPayload) error {
 	data := append(lengthByte, append(padding, payload...)...)
 	_, err = c.Conn.Write(data)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 	log.Println(c.ID, string(data))
