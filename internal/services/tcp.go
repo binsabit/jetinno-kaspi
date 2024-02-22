@@ -188,7 +188,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			if response != nil {
 				if err = client.Write(*response); err != nil {
 					log.Println(err)
-					return
+					continue
 				}
 				//if req.Command == pkg.COMMAND_QR_REQUEST {
 				//	order := db.Order{OrderNo: *req.Order_No, VendingMachineNo: strconv.FormatInt(req.VmcNo, 10)}
