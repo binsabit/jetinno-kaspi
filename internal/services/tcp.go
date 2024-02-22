@@ -141,6 +141,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		if err != nil && errors.Is(err, io.EOF) {
 			continue
 		}
+		log.Println(text, client.ID)
 
 		//lengthByte := make([]byte, 4)
 		//
