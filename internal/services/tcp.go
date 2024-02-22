@@ -1,7 +1,6 @@
 package services
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"github.com/jackc/pgx/v5"
-	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -130,72 +128,72 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		t.Clients.Delete(client.VmcNo)
 	}()
 
-	reader := bufio.NewReader(conn)
+	//reader := bufio.NewReader(conn)
 	for {
-
-		text, _, err := reader.ReadLine()
-		if err != nil && err != io.EOF {
-			log.Println(err)
-			return
-		} else if err != nil && err == io.EOF {
-			continue
-		}
-		log.Println(text, client.ID)
-
-		//lengthByte := make([]byte, 4)
 		//
-		//n, err := conn.Read(lengthByte)
-		//if err != nil {
+		//text, _, err := reader.ReadLine()
+		//if err != nil && err != io.EOF {
 		//	log.Println(err)
 		//	return
+		//} else if err != nil && err == io.EOF {
+		//	continue
 		//}
-		//var length int
-		//for i, val := range lengthByte[:] {
-		//	if val-48 > 0 {
-		//		length += int(val-48) + i*48
-		//	}
-		//
-		//}
-		//buf := make([]byte, 300)
-		//n, err = conn.Read(buf)
-		//if err != nil {
-		//	log.Println(err)
-		//	return
-		//}
-		//if n < 8 {
-		//	return
-		//}
-		//payload := buf[8:n]
-		//log.Println(length)
-		//log.Println(string(payload))
-		//var req JetinnoPayload
-		//err = sonic.ConfigFastest.Unmarshal(payload, &req)
-		//if err != nil {
-		//	log.Println(err)
-		//	return
-		//}
+		//log.Println(text, client.ID)
 
-		request, err := extractJSON(string(text))
+		lengthByte := make([]byte, 4)
+
+		n, err := conn.Read(lengthByte)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		fmt.Println(len(request))
-		for _, r := range request {
+		var length int
+		for i, val := range lengthByte[:] {
+			if val-48 > 0 {
+				length += int(val-48) + i*48
+			}
 
-			client.VmcNo = r.VmcNo
+		}
+		buf := make([]byte, 300)
+		n, err = conn.Read(buf)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		if n < 8 {
+			return
+		}
+		payload := buf[8:n]
+		log.Println(length)
+		log.Println(string(payload))
+		var req JetinnoPayload
+		err = sonic.ConfigFastest.Unmarshal(payload, &req)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
-			t.Clients.Store(r.VmcNo, client)
+		//request, err := extractJSON(string(text))
+		//if err != nil {
+		//	log.Println(err)
+		//	return
+		//}
+		//fmt.Println(len(request))
+		//for _, r := range request {
 
-			response := client.HandleRequest(r)
+		client.VmcNo = req.VmcNo
 
-			if response != nil {
-				if err = client.Write(*response); err != nil {
-					log.Println(err)
-					continue
-				}
+		t.Clients.Store(req.VmcNo, client)
+
+		response := client.HandleRequest(req)
+
+		if response != nil {
+			if err = client.Write(*response); err != nil {
+				log.Println(err)
+				continue
 			}
 		}
+		//}
 	}
 
 }
