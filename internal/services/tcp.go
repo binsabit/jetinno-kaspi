@@ -164,15 +164,11 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 		}
-
-		log.Println("PAYLOAD:", string(payload))
-
 		request, err := extractJSON(string(payload))
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		fmt.Println(len(request))
 		for _, r := range request {
 
 			client.VmcNo = r.VmcNo
