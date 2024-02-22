@@ -9,6 +9,7 @@ import (
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"github.com/jackc/pgx/v5"
+	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -133,9 +134,11 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	for {
 
 		text, _, err := reader.ReadLine()
-		if err != nil {
+		if err != nil && err != io.EOF {
 			log.Println(err)
 			return
+		} else if err != nil && err == io.EOF {
+			continue
 		}
 		log.Println(text, client.ID)
 
