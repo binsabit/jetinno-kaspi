@@ -166,34 +166,43 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		payload := buf[8:n]
 		log.Println(length)
 		log.Println(string(payload))
-		var req JetinnoPayload
-		err = sonic.ConfigFastest.Unmarshal(payload, &req)
+		if payload[len(payload)-1] != '}' {
+			for {
+				b := make([]byte, 1)
+				_, err := conn.Read(b)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				payload = append(payload, b...)
+				if b[0] == '}' {
+					break
+				}
+
+			}
+		}
+
+		request, err := extractJSON(string(payload))
 		if err != nil {
 			log.Println(err)
 			return
 		}
+		fmt.Println(len(request))
+		for _, r := range request {
 
-		//request, err := extractJSON(string(text))
-		//if err != nil {
-		//	log.Println(err)
-		//	return
-		//}
-		//fmt.Println(len(request))
-		//for _, r := range request {
+			client.VmcNo = r.VmcNo
 
-		client.VmcNo = req.VmcNo
+			t.Clients.Store(r.VmcNo, client)
 
-		t.Clients.Store(req.VmcNo, client)
+			response := client.HandleRequest(r)
 
-		response := client.HandleRequest(req)
-
-		if response != nil {
-			if err = client.Write(*response); err != nil {
-				log.Println(err)
-				continue
+			if response != nil {
+				if err = client.Write(*response); err != nil {
+					log.Println(err)
+					continue
+				}
 			}
 		}
-		//}
 	}
 
 }
