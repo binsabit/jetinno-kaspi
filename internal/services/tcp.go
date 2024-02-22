@@ -140,46 +140,19 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		//}
 		//log.Println(text, client.ID)
 
-		lengthByte := make([]byte, 4)
-
-		n, err := conn.Read(lengthByte)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		var length int
-		for i, val := range lengthByte[:] {
-			if val-48 > 0 {
-				length += int(val-48) + i*48
+		payload := []byte{}
+		for {
+			b := make([]byte, 1)
+			_, err := conn.Read(b)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			payload = append(payload, b...)
+			if b[0] == '}' {
+				break
 			}
 
-		}
-		buf := make([]byte, 300)
-		n, err = conn.Read(buf)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		if n < 8 {
-			return
-		}
-		payload := buf[8:n]
-		log.Println(length)
-		log.Println(string(payload))
-		if payload[len(payload)-1] != '}' {
-			for {
-				b := make([]byte, 1)
-				_, err := conn.Read(b)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-				payload = append(payload, b...)
-				if b[0] == '}' {
-					break
-				}
-
-			}
 		}
 
 		request, err := extractJSON(string(payload))
