@@ -152,6 +152,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			if b[0] == '{' {
 				brackets++
 			}
+			if brackets == 0 {
+				continue
+			}
 			payload = append(payload, b...)
 			if b[0] == '}' {
 				brackets--
@@ -161,6 +164,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 		}
+
 		log.Println("PAYLOAD:", string(payload))
 
 		request, err := extractJSON(string(payload))
