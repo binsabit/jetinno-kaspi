@@ -131,13 +131,12 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	}()
 
 	reader := bufio.NewReader(conn)
-Outer:
 	for {
 
 		text, _, err := reader.ReadLine()
 		if err != nil && !errors.Is(err, io.EOF) {
 			log.Println(err)
-			break Outer
+			return
 		}
 		if err != nil && errors.Is(err, io.EOF) {
 			continue
@@ -180,8 +179,7 @@ Outer:
 		request, err := extractJSON(string(text))
 		if err != nil {
 			log.Println(err)
-			break Outer
-
+			return
 		}
 		fmt.Println(len(request))
 		for _, r := range request {
@@ -209,7 +207,6 @@ Outer:
 			}
 		}
 	}
-	log.Println("finished")
 
 }
 
