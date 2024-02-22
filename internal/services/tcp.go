@@ -154,6 +154,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 			}
 
 		}
+		log.Println(string(payload))
 
 		request, err := extractJSON(string(payload))
 		if err != nil {
