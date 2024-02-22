@@ -129,13 +129,15 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		t.Clients.Delete(client.VmcNo)
 	}()
 
-	scanner := bufio.NewScanner(conn)
+	reader := bufio.NewReader(conn)
 	for {
 
-		scannable := scanner.Scan()
-		if !scannable {
+		text, _, err := reader.ReadLine()
+		if err != nil {
+			log.Println(err)
 			continue
 		}
+
 		//lengthByte := make([]byte, 4)
 		//
 		//n, err := conn.Read(lengthByte)
@@ -169,9 +171,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		//	return
 		//}
 
-		text := scanner.Text()
-
-		request, err := extractJSON(text)
+		request, err := extractJSON(string(text))
 		if err != nil {
 			log.Println(err)
 			return
