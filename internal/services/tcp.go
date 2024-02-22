@@ -9,7 +9,6 @@ import (
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
 	"github.com/jackc/pgx/v5"
-	"io"
 	"log"
 	"math/rand"
 	"net"
@@ -134,12 +133,9 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 	for {
 
 		text, _, err := reader.ReadLine()
-		if err != nil && !errors.Is(err, io.EOF) {
+		if err != nil {
 			log.Println(err)
 			return
-		}
-		if err != nil && errors.Is(err, io.EOF) {
-			continue
 		}
 		log.Println(text, client.ID)
 
@@ -195,15 +191,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 					log.Println(err)
 					continue
 				}
-				//if req.Command == pkg.COMMAND_QR_REQUEST {
-				//	order := db.Order{OrderNo: *req.Order_No, VendingMachineNo: strconv.FormatInt(req.VmcNo, 10)}
-				//	res := client.PayDone(context.Background(), order)
-				//	if err = client.Write(*res); err != nil {
-				//		log.Println(err)
-				//		return
-				//	}
-				//}
-
 			}
 		}
 	}
