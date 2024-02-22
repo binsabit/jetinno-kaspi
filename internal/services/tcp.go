@@ -105,7 +105,7 @@ func extractJSON(s string) ([]JetinnoPayload, error) {
 			log.Println("request:", string(i))
 			err := sonic.ConfigFastest.Unmarshal(i, &temp)
 			if err != nil {
-				log.Println(err)
+				log.Println(string(i), err)
 				return nil, err
 			}
 			jsonPayload = append(jsonPayload, temp)
