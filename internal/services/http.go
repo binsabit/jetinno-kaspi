@@ -32,13 +32,13 @@ func (s *Server) SetUpRoutes() {
 		}
 
 		log.Println("ORDER ID", input.OrderID)
-		//order, err := db.Storage.GetOrderByID(ctx.Context(), input.OrderID)
-		//if err != nil {
-		//	log.Println("http-server:", err)
-		//	return ctx.SendStatus(fiber.StatusInternalServerError)
-		//}
+		order, err := db.Storage.GetOrderByID(ctx.Context(), input.OrderID)
+		if err != nil {
+			log.Println("http-server:", err)
+			return ctx.SendStatus(fiber.StatusInternalServerError)
+		}
 
-		//s.EnsureOrderPayment(order)
+		s.EnsureOrderPayment(order)
 
 		return ctx.SendStatus(fiber.StatusOK)
 
@@ -82,6 +82,6 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 			log.Println("ENSURE PAYMENT PAY DONE ERROR: ", err)
 			return
 		}
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 3)
 	}
 }
