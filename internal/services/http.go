@@ -56,7 +56,7 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 		log.Println("could not parse vcmno")
 		return
 	}
-	log.Printf("%+v", order)
+	log.Printf("order: %+v\n", order)
 	for order.Status == 0 {
 		log.Println("trying to ", vmcno)
 		val, ok := s.TCPServer.Clients.Load(vmcno)
