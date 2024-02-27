@@ -31,11 +31,11 @@ type Client struct {
 type JetinnoPayload struct {
 	Command          string            `json:"cmd"`
 	VmcNo            int64             `json:"vmc_no"`
-	IsOk             *bool             `json:"isok"`
+	IsOk             *bool             `json:"isok,omitempty"`
 	State            *string           `json:"state,omitempty"`
 	Timestamp        *string           `json:"timestamp,omitempty"`
-	ErrorDescription *string           `json:"error_description"`
-	ErrorCode        *string           `json:"error_code"`
+	ErrorDescription *string           `json:"error_description,omitempty"`
+	ErrorCode        *string           `json:"error_code,omitempty"`
 	Login_Count      *int64            `json:"login_count,omitempty"`
 	CompId           *int              `json:"comp_id,omitempty"`
 	Sign             *string           `json:"sign,omitempty"`
