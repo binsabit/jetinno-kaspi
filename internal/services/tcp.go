@@ -26,8 +26,6 @@ type Client struct {
 	Server *TCPServer
 }
 
-// 2024/02/27 12:28:39 request: {"datetime":"20240227","error_code":"ERROR:5700","error_description":"Bean container lacks coffee beans","isSet":true,"is_fatal_error":true,"is_pessistance_error":false,"cmd":"error","vmc_no":58583,"padding":"padding"}
-
 type JetinnoPayload struct {
 	Command          string            `json:"cmd"`
 	VmcNo            int64             `json:"vmc_no"`
@@ -233,10 +231,11 @@ func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
 	case pkg.COMMAND_HEARDBEAT:
 		response = c.HB(request)
 	case pkg.COMMAND_ERROR_REQUEST:
+		response = c.Error(request)
 	case pkg.COMMAND_LOGIN_REQUEST:
 		response = c.Login(request)
 	case pkg.COMMAND_MACHINESTATUS_REQUEST:
-		response = nil
+		response = c.MachineStatus(request)
 	case pkg.COMMAND_QR_REQUEST:
 		response = c.QR(ctx, request)
 	case pkg.COMMAND_CHECKORDER_REQUEST:
@@ -373,7 +372,8 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 	return response
 }
 
-func (c Client) Error(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+func (c Client) Error(request JetinnoPayload) *JetinnoPayload {
+	ctx := context.Background()
 
 	err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 3)
 	if err != nil {
@@ -411,7 +411,9 @@ func (c Client) Error(ctx context.Context, request JetinnoPayload) *JetinnoPaylo
 
 }
 
-func (c *Client) MachineStatus(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+func (c *Client) MachineStatus(request JetinnoPayload) *JetinnoPayload {
+
+	ctx := context.Background()
 	if *request.Status == "clearerror" {
 		err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 1)
 		if err != nil {
