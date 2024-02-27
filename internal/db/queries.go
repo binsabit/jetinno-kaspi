@@ -24,7 +24,7 @@ type Order struct {
 }
 
 func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, int, error) {
-	query := `SELECT id,status FROM vending_machines where no = $1`
+	query := `SELECT id,health FROM vending_machines where no = $1`
 
 	var id int64
 	var status int
@@ -84,7 +84,7 @@ func (d *Database) UpdateOrder(ctx context.Context, vmcID int64, orderNo string,
 }
 
 func (d *Database) GetMachineStatus(ctx context.Context, no string) (int, error) {
-	query := `select status from vending_machines where no=$1`
+	query := `select health from vending_machines where no=$1`
 
 	var status int
 
@@ -97,14 +97,14 @@ func (d *Database) GetMachineStatus(ctx context.Context, no string) (int, error)
 }
 
 func (d *Database) UpdateMachineStatus(ctx context.Context, no string, status int) error {
-	query := `update vending_machines set status = $1 where no = $2`
+	query := `update vending_machines set health = $1 where no = $2`
 
 	_, err := d.db.Exec(ctx, query, no, status)
 	return err
 }
 
 func (d *Database) CreateError(ctx context.Context, id int64, code, description string) error {
-	query := `insert into vending_machine_errors (vmc_id, code, description) values($1,$2,$3)`
+	query := `insert into machine_errors (vmc_id, code, description) values($1,$2,$3)`
 
 	_, err := d.db.Exec(ctx, query, id, code, description)
 	return err
