@@ -382,6 +382,7 @@ func (c Client) Error(ctx context.Context, request JetinnoPayload) *JetinnoPaylo
 			if err == nil {
 				break
 			}
+			log.Println(err)
 		}
 	}
 	//save error
@@ -392,6 +393,7 @@ func (c Client) Error(ctx context.Context, request JetinnoPayload) *JetinnoPaylo
 			if err == nil {
 				break
 			}
+			log.Println(err)
 		}
 	}
 	err = db.Storage.CreateError(ctx, id, *request.ErrorCode, *request.ErrorDescription)
@@ -401,6 +403,7 @@ func (c Client) Error(ctx context.Context, request JetinnoPayload) *JetinnoPaylo
 			if err == nil {
 				break
 			}
+			log.Println(err)
 		}
 	}
 
@@ -412,9 +415,10 @@ func (c *Client) MachineStatus(ctx context.Context, request JetinnoPayload) *Jet
 	if *request.Status == "clearerror" {
 		err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 1)
 		if err != nil {
-			log.Println()
+			log.Println(err)
 			return nil
 		}
+
 	}
 	return nil
 }
