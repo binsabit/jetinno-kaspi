@@ -23,14 +23,14 @@ type Order struct {
 	Paid             bool
 }
 
-func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, error) {
-	query := `SELECT id FROM vending_machines where no = $1`
+func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, int, error) {
+	query := `SELECT id,status FROM vending_machines where no = $1`
 
 	var id int64
+	var status int
+	err := d.db.QueryRow(ctx, query, vmcNo).Scan(&id, &status)
 
-	err := d.db.QueryRow(ctx, query, vmcNo).Scan(&id)
-
-	return id, err
+	return id, status, err
 }
 
 func (d *Database) CreateOrder(ctx context.Context, order Order) (int64, error) {
@@ -81,4 +81,32 @@ func (d *Database) UpdateOrder(ctx context.Context, vmcID int64, orderNo string,
 
 	_, err := d.db.Exec(ctx, query, status, orderNo, vmcID)
 	return err
+}
+
+func (d *Database) GetMachineStatus(ctx context.Context, no string) (int, error) {
+	query := `select status from vending_machines where no=$1`
+
+	var status int
+
+	err := d.db.QueryRow(ctx, query, no).Scan(&status)
+	if err != nil {
+		return 0, err
+	}
+
+	return status, nil
+}
+
+func (d *Database) UpdateMachineStatus(ctx context.Context, no string, status int) error {
+	query := `update vending_machines set status = $1 where no = $2`
+
+	_, err := d.db.Exec(ctx, query, no, status)
+	return err
+}
+
+func (d *Database) CreateError(ctx context.Context, id int64, code, description string) error {
+	query := `insert into vending_machine_errors (vmc_id, code, description) values($1,$2,$3)`
+
+	_, err := d.db.Exec(ctx, query, id, code, description)
+	return err
+
 }

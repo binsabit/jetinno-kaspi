@@ -26,32 +26,37 @@ type Client struct {
 	Server *TCPServer
 }
 
+// 2024/02/27 12:28:39 request: {"datetime":"20240227","error_code":"ERROR:5700","error_description":"Bean container lacks coffee beans","isSet":true,"is_fatal_error":true,"is_pessistance_error":false,"cmd":"error","vmc_no":58583,"padding":"padding"}
+
 type JetinnoPayload struct {
-	Command        string            `json:"cmd"`
-	VmcNo          int64             `json:"vmc_no"`
-	State          *string           `json:"state,omitempty"`
-	Timestamp      *string           `json:"timestamp,omitempty"`
-	Login_Count    *int64            `json:"login_count,omitempty"`
-	CompId         *int              `json:"comp_id,omitempty"`
-	Sign           *string           `json:"sign,omitempty"`
-	Version        *string           `json:"version,omitempty"`
-	IO_Version     *string           `json:"io_version,omitempty"`
-	Carrier_Code   *string           `json:"carrier_code,omitempty"`
-	Date_Time      *string           `json:"date_time,omitempty"`
-	Server_List    *string           `json:"server_list,omitempty"`
-	Ret            *int              `json:"ret,omitempty"`
-	Status         *string           `json:"status,omitempty"`
-	Supply         map[string]string `json:"supply,omitempty"`
-	Time           *string           `json:"time,omitempty"`
-	IsLock         *bool             `json:"islock,omitempty"`
-	QR_type        *string           `json:"qr_type,omitempty"`
-	Pruduct_ID     *int64            `json:"product_id,omitempty"`
-	Amount         *int64            `json:"Amount,omitempty"`
-	Order_No       *string           `json:"order_no,omitempty"`
-	QRCode         *string           `json:"qrcode,omitempty"`
-	Product_Amount *int              `json:"product_amount,omitempty"`
-	PayType        *string           `json:"paytype,omitempty"`
-	PayDone        *bool             `json:"paydone,omitempty"`
+	Command          string            `json:"cmd"`
+	VmcNo            int64             `json:"vmc_no"`
+	IsOk             *bool             `json:"isok"`
+	State            *string           `json:"state,omitempty"`
+	Timestamp        *string           `json:"timestamp,omitempty"`
+	ErrorDescription *string           `json:"error_description"`
+	ErrorCode        *string           `json:"error_code"`
+	Login_Count      *int64            `json:"login_count,omitempty"`
+	CompId           *int              `json:"comp_id,omitempty"`
+	Sign             *string           `json:"sign,omitempty"`
+	Version          *string           `json:"version,omitempty"`
+	IO_Version       *string           `json:"io_version,omitempty"`
+	Carrier_Code     *string           `json:"carrier_code,omitempty"`
+	Date_Time        *string           `json:"date_time,omitempty"`
+	Server_List      *string           `json:"server_list,omitempty"`
+	Ret              *int              `json:"ret,omitempty"`
+	Status           *string           `json:"status,omitempty"`
+	Supply           map[string]string `json:"supply,omitempty"`
+	Time             *string           `json:"time,omitempty"`
+	IsLock           *bool             `json:"islock,omitempty"`
+	QR_type          *string           `json:"qr_type,omitempty"`
+	Pruduct_ID       *int64            `json:"product_id,omitempty"`
+	Amount           *int64            `json:"Amount,omitempty"`
+	Order_No         *string           `json:"order_no,omitempty"`
+	QRCode           *string           `json:"qrcode,omitempty"`
+	Product_Amount   *int              `json:"product_amount,omitempty"`
+	PayType          *string           `json:"paytype,omitempty"`
+	PayDone          *bool             `json:"paydone,omitempty"`
 }
 
 type TCPServer struct {
@@ -251,9 +256,12 @@ func (c *Client) HB(request JetinnoPayload) *JetinnoPayload {
 }
 
 func (c *Client) PayDone(ctx context.Context, order db.Order) *JetinnoPayload {
-	id, err := db.Storage.GetVmdIDByNo(ctx, order.VendingMachineNo)
+	id, status, err := db.Storage.GetVmdIDByNo(ctx, order.VendingMachineNo)
 	if err != nil {
 		log.Println(err)
+		return nil
+	}
+	if status != 1 {
 		return nil
 	}
 	log.Println("order number", order.OrderNo)
@@ -276,9 +284,13 @@ func (c *Client) PayDone(ctx context.Context, order db.Order) *JetinnoPayload {
 }
 
 func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	id, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+	id, status, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
 	if err != nil {
 		log.Println(err)
+		return nil
+	}
+
+	if status != 1 {
 		return nil
 	}
 
@@ -334,11 +346,15 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 	}
 
 	if order.Paid && order.Status == 0 {
-		id, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+		id, status, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
 		if err != nil {
 			log.Println(err)
 			return nil
 		}
+		if status != 1 {
+			return nil
+		}
+
 		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
 		if err != nil {
 			return nil
@@ -356,18 +372,67 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 
 	return response
 }
-func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	id, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+
+func (c Client) Error(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+
+	err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 3)
 	if err != nil {
-		log.Println(err)
-		return nil
+		for {
+			err = db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 3)
+			if err == nil {
+				break
+			}
+		}
 	}
-	err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
+	//save error
+	id, _, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
 	if err != nil {
-		log.Println(err)
-		return nil
+		for {
+			id, _, err = db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+			if err == nil {
+				break
+			}
+		}
+	}
+	err = db.Storage.CreateError(ctx, id, *request.ErrorCode, *request.ErrorDescription)
+	if err != nil {
+		for {
+			err = db.Storage.CreateError(ctx, id, *request.ErrorCode, *request.ErrorDescription)
+			if err == nil {
+				break
+			}
+		}
 	}
 
+	return &JetinnoPayload{VmcNo: request.VmcNo, Command: pkg.COMMAND_ERROR_RESPONSE}
+
+}
+
+func (c *Client) MachineStatus(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+	if *request.Status == "clearerror" {
+		err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 1)
+		if err != nil {
+			log.Println()
+			return nil
+		}
+	}
+	return nil
+}
+
+func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
+
+	id, _, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	if *request.IsOk == true {
+		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+	}
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,
