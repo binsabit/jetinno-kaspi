@@ -99,7 +99,7 @@ func (d *Database) GetMachineStatus(ctx context.Context, no string) (int, error)
 func (d *Database) UpdateMachineStatus(ctx context.Context, no string, status int) error {
 	query := `update vending_machines set health = $1 where no = $2`
 
-	_, err := d.db.Exec(ctx, query, no, status)
+	_, err := d.db.Exec(ctx, query, status, no)
 	return err
 }
 
