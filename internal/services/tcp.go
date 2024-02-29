@@ -441,7 +441,7 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 			return nil
 		}
 	}
-	if request.Failreason != nil {
+	if !*request.IsOk && request.Failreason != nil {
 		err = db.Storage.CreateError(ctx, request.VmcNo, *request.Failreason, "")
 		if err != nil {
 			for {
