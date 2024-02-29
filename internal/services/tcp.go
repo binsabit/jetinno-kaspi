@@ -44,6 +44,7 @@ type JetinnoPayload struct {
 	Server_List      *string           `json:"server_list,omitempty"`
 	Ret              *int              `json:"ret,omitempty"`
 	Status           *string           `json:"status,omitempty"`
+	Failreason       *string           `json:"failreason,omitempty"`
 	Supply           map[string]string `json:"supply,omitempty"`
 	Time             *string           `json:"time,omitempty"`
 	IsLock           *bool             `json:"islock,omitempty"`
@@ -432,11 +433,23 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 		log.Println(err)
 		return nil
 	}
+
 	if *request.IsOk == true {
 		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
 		if err != nil {
 			log.Println(err)
 			return nil
+		}
+	}
+	if request.Failreason != nil {
+		err = db.Storage.CreateError(ctx, request.VmcNo, *request.Failreason, "")
+		if err != nil {
+			for {
+				err = db.Storage.CreateError(ctx, request.VmcNo, *request.Failreason, "")
+				if err == nil {
+					break
+				}
+			}
 		}
 	}
 	response := &JetinnoPayload{
