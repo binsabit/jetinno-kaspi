@@ -182,6 +182,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 					if err != nil {
 						log.Println("error while closing connection")
 					}
+					v = nil
 				}
 			}
 			t.Clients.Store(r.VmcNo, client)
