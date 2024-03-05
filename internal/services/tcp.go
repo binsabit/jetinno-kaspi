@@ -177,9 +177,11 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 
 			client.VmcNo = r.VmcNo
 			if v, ok := t.Clients.Load(r.VmcNo); ok {
-				err := v.(*Client).Conn.Close()
-				if err != nil {
-					log.Println("error while closing connection")
+				if v.(*Client).ID != client.ID {
+					err := v.(*Client).Conn.Close()
+					if err != nil {
+						log.Println("error while closing connection")
+					}
 				}
 			}
 			t.Clients.Store(r.VmcNo, client)
