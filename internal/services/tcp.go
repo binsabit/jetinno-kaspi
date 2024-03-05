@@ -175,7 +175,6 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 		}
 		for _, r := range request {
 
-			client.VmcNo = r.VmcNo
 			if v, ok := t.Clients.Load(r.VmcNo); ok {
 				if v.(*Client).ID != client.ID {
 					err := v.(*Client).Conn.Close()
@@ -185,6 +184,7 @@ func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
 					v = nil
 				}
 			}
+			client.VmcNo = r.VmcNo
 			t.Clients.Store(r.VmcNo, client)
 
 			response := client.HandleRequest(r)
