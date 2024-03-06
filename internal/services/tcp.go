@@ -24,6 +24,7 @@ type Client struct {
 	VmcNo  int64
 	Conn   *net.TCPConn
 	Server *TCPServer
+	stopCh chan struct{}
 }
 
 type JetinnoPayload struct {
@@ -87,7 +88,13 @@ func (t *TCPServer) RunTCPServer() {
 			continue
 		}
 		conn.SetKeepAlive(true)
-		go t.HandleConnection(conn)
+		client := &Client{
+			ID:     rand.Int(),
+			Conn:   conn,
+			Server: t,
+			stopCh: make(chan struct{}),
+		}
+		go client.HandleConnection()
 	}
 }
 
@@ -118,81 +125,68 @@ func extractJSON(s string) ([]JetinnoPayload, error) {
 	return jsonPayload, nil
 }
 
-func (t *TCPServer) HandleConnection(conn *net.TCPConn) {
-
-	client := &Client{
-		ID:     rand.Int(),
-		Conn:   conn,
-		Server: t,
-	}
+func (c *Client) HandleConnection() {
 
 	defer func() {
-		conn.Close()
-		t.Clients.Delete(client.VmcNo)
+		c.Conn.Close()
+		c.Server.Clients.Delete(c.VmcNo)
 	}()
 
 	//reader := bufio.NewReader(conn)
 	for {
-		//
-		//text, _, err := reader.ReadLine()
-		//if err != nil && err != io.EOF {
-		//	log.Println(err)
-		//	return
-		//} else if err != nil && err == io.EOF {
-		//	continue
-		//}
-		//log.Println(text, client.ID)
 
-		payload := []byte{}
+		select {
+		case <-c.stopCh:
+			log.Println("closing connection to:", c.VmcNo)
+			return
+		default:
+			payload := []byte{}
 
-		brackets := 0
-		for {
-			b := make([]byte, 1)
-			_, err := conn.Read(b)
+			brackets := 0
+			for {
+				b := make([]byte, 1)
+				_, err := c.Conn.Read(b)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				if b[0] == '{' {
+					brackets++
+				}
+				if brackets == 0 {
+					continue
+				}
+				payload = append(payload, b...)
+				if b[0] == '}' {
+					brackets--
+				}
+				if brackets == 0 {
+					break
+				}
+
+			}
+			request, err := extractJSON(string(payload))
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			if b[0] == '{' {
-				brackets++
-			}
-			if brackets == 0 {
-				continue
-			}
-			payload = append(payload, b...)
-			if b[0] == '}' {
-				brackets--
-			}
-			if brackets == 0 {
-				break
-			}
-
-		}
-		request, err := extractJSON(string(payload))
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		for _, r := range request {
-
-			if v, ok := t.Clients.Load(r.VmcNo); ok {
-				if v.(*Client).ID != client.ID {
-					err := v.(*Client).Conn.Close()
-					if err != nil {
-						log.Println("error while closing connection")
+			for _, r := range request {
+				if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
+					other := val.(*Client)
+					if other.ID != c.ID {
+						val.(*Client).stopCh <- struct{}{}
 					}
-					v = nil
 				}
-			}
-			client.VmcNo = r.VmcNo
-			t.Clients.Store(r.VmcNo, client)
+				c.VmcNo = r.VmcNo
+				c.Server.Clients.Store(r.VmcNo, c)
 
-			response := client.HandleRequest(r)
+				response := c.HandleRequest(r)
 
-			if response != nil {
-				if err = client.Write(*response); err != nil {
-					log.Println(err)
-					continue
+				if response != nil {
+					if err = c.Write(*response); err != nil {
+						log.Println(err)
+						continue
+					}
 				}
 			}
 		}
