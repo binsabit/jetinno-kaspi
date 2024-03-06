@@ -171,6 +171,12 @@ func (c *Client) HandleConnection() {
 				return
 			}
 			for _, r := range request {
+
+				if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
+					if val.(*Client).ID != c.ID {
+						return
+					}
+				}
 				c.VmcNo = r.VmcNo
 				c.Server.Clients.Store(r.VmcNo, c)
 
