@@ -151,16 +151,17 @@ func (c *Client) HandleConnection() {
 					log.Println(err)
 					return
 				}
-				if b[0] == '{' {
-					brackets++
-				}
+
 				if brackets == 0 {
 					continue
 				}
-				payload = append(payload, b...)
-				if b[0] == '}' {
+				if b[0] == '{' {
+					brackets++
+				} else if b[0] == '}' {
 					brackets--
 				}
+
+				payload = append(payload, b...)
 				if brackets == 0 {
 					break
 				}
