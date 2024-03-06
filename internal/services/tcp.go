@@ -98,7 +98,7 @@ func (t *TCPServer) RunTCPServer() {
 	}
 }
 
-func extractJSON(s string) ([]JetinnoPayload, error) {
+func extractJSON(s string) []JetinnoPayload {
 	re := regexp.MustCompile(`\{([^}]*)\}`)
 
 	matches := re.FindAllStringSubmatch(s, -1)
@@ -123,7 +123,7 @@ func extractJSON(s string) ([]JetinnoPayload, error) {
 		}
 	}
 
-	return jsonPayload, nil
+	return jsonPayload
 }
 
 func (c *Client) HandleConnection() {
@@ -151,27 +151,23 @@ func (c *Client) HandleConnection() {
 					log.Println(err)
 					return
 				}
-
+				if b[0] == '{' {
+					brackets++
+				}
 				if brackets == 0 {
 					continue
 				}
-				if b[0] == '{' {
-					brackets++
-				} else if b[0] == '}' {
+				payload = append(payload, b...)
+				if b[0] == '}' {
 					brackets--
 				}
-
-				payload = append(payload, b...)
 				if brackets == 0 {
 					break
 				}
 
 			}
-			request, err := extractJSON(string(payload))
-			if err != nil {
-				log.Println(err)
-				return
-			}
+			request := extractJSON(string(payload))
+
 			for _, r := range request {
 
 				if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
@@ -185,7 +181,7 @@ func (c *Client) HandleConnection() {
 				response := c.HandleRequest(r)
 
 				if response != nil {
-					if err = c.Write(*response); err != nil {
+					if err := c.Write(*response); err != nil {
 						log.Println(err)
 						continue
 					}
