@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+var liveMachines = map[int64]int{}
+
 var KASPI_QR_URL string
 
 type Client struct {
@@ -130,10 +132,10 @@ func (c *Client) HandleConnection() {
 
 	defer func() {
 		c.Conn.Close()
-		c.Server.Clients.Delete(c.VmcNo)
 	}()
 
 	//reader := bufio.NewReader(conn)
+
 	for {
 
 		select {
@@ -176,8 +178,17 @@ func (c *Client) HandleConnection() {
 				//		return
 				//	}
 				//}
+
+				if val, ok := liveMachines[r.VmcNo]; ok {
+					if val != c.ID {
+						return
+					}
+				}
+
 				c.VmcNo = r.VmcNo
 				c.Server.Clients.Store(r.VmcNo, c)
+
+				liveMachines[r.VmcNo] = c.ID
 
 				response := c.HandleRequest(r)
 
@@ -190,7 +201,6 @@ func (c *Client) HandleConnection() {
 			}
 		}
 	}
-
 }
 
 func (c *Client) Write(response JetinnoPayload) error {
