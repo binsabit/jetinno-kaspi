@@ -131,6 +131,7 @@ func extractJSON(s string) []JetinnoPayload {
 func (c *Client) HandleConnection() {
 
 	defer func() {
+		delete(liveMachines, c.VmcNo)
 		c.Conn.Close()
 	}()
 
