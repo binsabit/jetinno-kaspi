@@ -151,7 +151,7 @@ func (c *Client) HandleConnection() {
 				_, err := c.Conn.Read(b)
 				if err != nil {
 					log.Println(err)
-					return
+					break
 				}
 				if b[0] == '{' {
 					brackets++
@@ -181,6 +181,7 @@ func (c *Client) HandleConnection() {
 
 				if val, ok := liveMachines[r.VmcNo]; ok {
 					if val != c.ID {
+						log.Printf("%d exists with id: %d", r.VmcNo, val)
 						return
 					}
 				}
