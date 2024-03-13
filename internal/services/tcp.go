@@ -348,22 +348,6 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 		return nil
 	}
 
-	if order.Paid && order.Status == 0 {
-		id, status, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-		if status != 1 {
-			return nil
-		}
-
-		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
-		if err != nil {
-			return nil
-		}
-
-	}
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
@@ -371,6 +355,24 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 		Amount:   &amount,
 		PayType:  &order.QRType,
 		PayDone:  &order.Paid,
+	}
+
+	if order.Paid && order.Status == 0 {
+		id, status, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		if status != 1 {
+			*response.PayDone = false
+			return response
+		}
+
+		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
+		for err != nil {
+			log.Println(err)
+			err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
+		}
 	}
 
 	return response
