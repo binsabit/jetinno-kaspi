@@ -145,7 +145,7 @@ func (c *Client) HandleConnection() {
 			return
 		default:
 			payload := []byte{}
-
+			log.Println(c.VmcNo)
 			brackets := 0
 			for {
 				b := make([]byte, 1)
