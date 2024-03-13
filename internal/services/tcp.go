@@ -130,6 +130,7 @@ func (c *Client) HandleConnection() {
 
 	defer func() {
 		c.Conn.Close()
+		c.Server.Clients.Delete(c.VmcNo)
 	}()
 
 	//reader := bufio.NewReader(conn)
