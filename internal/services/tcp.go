@@ -17,8 +17,6 @@ import (
 	"time"
 )
 
-var liveMachines = map[int64]int{}
-
 var KASPI_QR_URL string
 
 type Client struct {
@@ -131,18 +129,18 @@ func extractJSON(s string) []JetinnoPayload {
 func (c *Client) HandleConnection() {
 
 	defer func() {
-		delete(liveMachines, c.VmcNo)
 		c.Conn.Close()
 	}()
 
 	//reader := bufio.NewReader(conn)
 
+Outer:
 	for {
 
 		select {
 		case <-c.stopCh:
 			log.Println("closing connection to:", c.VmcNo)
-			return
+			break Outer
 		default:
 			payload := []byte{}
 			log.Println(c.VmcNo)
@@ -152,7 +150,7 @@ func (c *Client) HandleConnection() {
 				_, err := c.Conn.Read(b)
 				if err != nil {
 					log.Println(err)
-					return
+					break Outer
 				}
 				if b[0] == '{' {
 					brackets++
@@ -173,24 +171,15 @@ func (c *Client) HandleConnection() {
 
 			for _, r := range request {
 
-				//if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
-				//	if val.(*Client).ID != c.ID {
-				//		log.Println("Vending machine exists")
-				//		return
-				//	}
-				//}
-
-				if val, ok := liveMachines[r.VmcNo]; ok {
-					if val != c.ID {
-						log.Printf("%d exists with id: %d", r.VmcNo, val)
+				if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
+					if val.(*Client).ID != c.ID {
+						log.Println("Vending machine exists")
 						return
 					}
 				}
 
 				c.VmcNo = r.VmcNo
 				c.Server.Clients.Store(r.VmcNo, c)
-
-				liveMachines[r.VmcNo] = c.ID
 
 				response := c.HandleRequest(r)
 
@@ -203,6 +192,7 @@ func (c *Client) HandleConnection() {
 			}
 		}
 	}
+	c.Server.Clients.Delete(c.VmcNo)
 }
 
 func (c *Client) Write(response JetinnoPayload) error {
