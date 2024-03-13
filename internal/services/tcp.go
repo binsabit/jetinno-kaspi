@@ -151,7 +151,7 @@ func (c *Client) HandleConnection() {
 				_, err := c.Conn.Read(b)
 				if err != nil {
 					log.Println(err)
-					break
+					return
 				}
 				if b[0] == '{' {
 					brackets++
