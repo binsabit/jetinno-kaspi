@@ -445,13 +445,15 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 		}
 	}
 	if !*request.IsOk {
-		err = db.Storage.CreateError(ctx, request.VmcNo, *request.Failreason, "")
-		if err != nil {
-			log.Println(err)
-			for {
-				err = db.Storage.CreateError(ctx, request.VmcNo, *request.Failreason, "")
-				if err == nil {
-					break
+		if request.Failreason != nil {
+			err = db.Storage.CreateError(ctx, request.VmcNo, *request.Failreason, "")
+			if err != nil {
+				log.Println(err)
+				for {
+					err = db.Storage.CreateError(ctx, request.VmcNo, *request.Failreason, "")
+					if err == nil {
+						break
+					}
 				}
 			}
 		}
