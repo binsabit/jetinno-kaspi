@@ -172,6 +172,7 @@ func (c *Client) HandleConnection() {
 
 				if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
 					if val.(*Client).ID != c.ID {
+						log.Println("Vending machine exists")
 						return
 					}
 				}
@@ -466,6 +467,7 @@ func (c *Client) Login(request JetinnoPayload) *JetinnoPayload {
 	dateTime := time.Now().Format(time.DateTime)
 	serverlist := "185.100.67.252"
 	ret := 0
+
 	response := &JetinnoPayload{
 		VmcNo:        request.VmcNo,
 		Command:      pkg.COMMAND_LOGIN_RESPONSE,
