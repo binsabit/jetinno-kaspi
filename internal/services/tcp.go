@@ -170,12 +170,12 @@ func (c *Client) HandleConnection() {
 
 			for _, r := range request {
 
-				if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
-					if val.(*Client).ID != c.ID {
-						log.Println("Vending machine exists")
-						return
-					}
-				}
+				//if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
+				//	if val.(*Client).ID != c.ID {
+				//		log.Println("Vending machine exists")
+				//		return
+				//	}
+				//}
 				c.VmcNo = r.VmcNo
 				c.Server.Clients.Store(r.VmcNo, c)
 
