@@ -164,7 +164,7 @@ func (c *Client) HandleConnection() {
 					brackets--
 				}
 				if brackets == 0 {
-					break
+					return
 				}
 
 			}
