@@ -16,7 +16,9 @@ func main() {
 	}
 
 	services.KASPI_QR_URL = cfg.KASPI_QR_URL
-
+	services.KaspiLogin = cfg.KASPI_LOGIN
+	services.KaspiPassword = cfg.KASPI_PASSWORD
+	services.KaspiRefundURL = cfg.KASPI_REFUND_URL
 	err = db.New(context.Background())
 	if err != nil {
 		log.Fatal(err)
