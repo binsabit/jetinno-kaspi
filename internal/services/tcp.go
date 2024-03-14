@@ -2,17 +2,14 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/binsabit/jetinno-kapsi/internal/db"
 	"github.com/binsabit/jetinno-kapsi/pkg"
 	"github.com/bytedance/sonic"
-	"github.com/jackc/pgx/v5"
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"regexp"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -24,7 +21,16 @@ type Client struct {
 	VmcNo  int64
 	Conn   *net.TCPConn
 	Server *TCPServer
-	stopCh chan struct{}
+	logger *log.Logger
+}
+
+func NewClient(conn *net.TCPConn, server *TCPServer) *Client {
+	return &Client{
+		ID:     rand.Int(),
+		Conn:   conn,
+		Server: server,
+		logger: log.New(os.Stdout, "", log.LstdFlags),
+	}
 }
 
 type JetinnoPayload struct {
@@ -92,38 +98,9 @@ func (t *TCPServer) RunTCPServer() {
 			ID:     rand.Int(),
 			Conn:   conn,
 			Server: t,
-			stopCh: make(chan struct{}),
 		}
 		go client.HandleConnection()
 	}
-}
-
-func extractJSON(s string) []JetinnoPayload {
-	re := regexp.MustCompile(`\{([^}]*)\}`)
-
-	matches := re.FindAllStringSubmatch(s, -1)
-
-	var (
-		results     []string
-		jsonPayload []JetinnoPayload
-	)
-
-	for _, match := range matches {
-		if len(match) == 2 {
-			results = append(results, match[1])
-			var temp JetinnoPayload
-			i := []byte("{" + match[1] + "}")
-			log.Println("request:", string(i))
-			err := sonic.ConfigFastest.Unmarshal(i, &temp)
-			if err != nil {
-				log.Println("JSON ERROR:", err)
-				continue
-			}
-			jsonPayload = append(jsonPayload, temp)
-		}
-	}
-
-	return jsonPayload
 }
 
 func (c *Client) HandleConnection() {
@@ -132,66 +109,59 @@ func (c *Client) HandleConnection() {
 		c.Conn.Close()
 	}()
 
-	//reader := bufio.NewReader(conn)
-
 Outer:
 	for {
 
-		select {
-		case <-c.stopCh:
-			log.Println("closing connection to:", c.VmcNo)
-			break Outer
-		default:
-			payload := []byte{}
-			log.Println(c.VmcNo)
-			brackets := 0
-			for {
-				b := make([]byte, 1)
-				_, err := c.Conn.Read(b)
-				if err != nil {
-					log.Println(err)
-					break Outer
-				}
-				if b[0] == '{' {
-					brackets++
-				}
-				if brackets == 0 {
-					continue
-				}
-				payload = append(payload, b...)
-				if b[0] == '}' {
-					brackets--
-				}
-				if brackets == 0 {
-					break
-				}
-
+		payload := []byte{}
+		brackets := 0
+		for {
+			b := make([]byte, 1)
+			_, err := c.Conn.Read(b)
+			if err != nil {
+				c.logger.Println(err)
+				break Outer
 			}
-			request := extractJSON(string(payload))
+			if b[0] == '{' {
+				brackets++
+			}
+			if brackets == 0 {
+				continue
+			}
+			payload = append(payload, b...)
+			if b[0] == '}' {
+				brackets--
+			}
+			if brackets == 0 {
+				break
+			}
 
-			for _, r := range request {
+		}
+		request := c.extractJSON(string(payload))
 
-				if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
-					if val.(*Client).ID != c.ID {
-						log.Println("Vending machine exists")
-						return
-					}
+		for _, r := range request {
+
+			if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
+				if val.(*Client).ID != c.ID {
+					log.Println("Vending machine exists")
+					return
 				}
+			}
 
-				c.VmcNo = r.VmcNo
-				c.Server.Clients.Store(r.VmcNo, c)
+			c.VmcNo = r.VmcNo
+			c.logger.SetPrefix(fmt.Sprintf("[%d]", r.VmcNo))
+			c.Server.Clients.Store(r.VmcNo, c)
 
-				response := c.HandleRequest(r)
+			response := c.HandleRequest(r)
 
-				if response != nil {
-					if err := c.Write(*response); err != nil {
-						log.Println(err)
-						continue
-					}
+			if response != nil {
+				if err := c.Write(*response); err != nil {
+					c.logger.Println(err)
+					continue
 				}
 			}
 		}
 	}
+
 	c.Server.Clients.Delete(c.VmcNo)
 }
 
@@ -222,7 +192,7 @@ func (c *Client) Write(response JetinnoPayload) error {
 	if err != nil {
 		return err
 	}
-	log.Println(c.ID, string(data))
+	c.logger.Println(string(data))
 	return nil
 }
 
@@ -251,237 +221,30 @@ func (c *Client) HandleRequest(request JetinnoPayload) *JetinnoPayload {
 	return response
 }
 
-func (c *Client) HB(request JetinnoPayload) *JetinnoPayload {
-	return &JetinnoPayload{
-		VmcNo:   request.VmcNo,
-		Command: pkg.COMMAND_HEARDBEAT,
-	}
-}
+func (c Client) extractJSON(s string) []JetinnoPayload {
+	re := regexp.MustCompile(`\{([^}]*)\}`)
 
-func (c *Client) PayDone(ctx context.Context, order db.Order) *JetinnoPayload {
-	id, status, err := db.Storage.GetVmdIDByNo(ctx, order.VendingMachineNo)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	if status != 1 {
-		return nil
-	}
-	log.Println("order number", order.OrderNo)
-	err = db.Storage.UpdateOrder(ctx, id, order.OrderNo, 1)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
+	matches := re.FindAllStringSubmatch(s, -1)
 
-	vmcNo, _ := strconv.ParseInt(order.VendingMachineNo, 10, 64)
-	amount := int(order.Amount * 100)
-	return &JetinnoPayload{
-		VmcNo:          vmcNo,
-		Command:        pkg.COMMAND_PAYDONE_REQUEST,
-		Product_Amount: &amount,
-		Order_No:       &order.OrderNo,
-		PayDone:        &order.Paid,
-		PayType:        &order.QRType,
-	}
-}
+	var (
+		results     []string
+		jsonPayload []JetinnoPayload
+	)
 
-func (c *Client) QR(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-	id, status, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-
-	if status != 1 {
-		return nil
-	}
-
-	_, err = db.Storage.GetOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		log.Println(err)
-		return nil
-	}
-
-	if err == nil {
-		return nil
-	}
-
-	orderID, err := db.Storage.CreateOrder(ctx, db.Order{
-		OrderNo:          *request.Order_No,
-		VendingMachineID: id,
-		ProductID:        *request.Pruduct_ID,
-		QRType:           *request.QR_type,
-		Amount:           float32(*request.Amount),
-	})
-
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	response := &JetinnoPayload{
-		VmcNo:    request.VmcNo,
-		Command:  pkg.COMMAND_QR_RESPONSE,
-		Amount:   request.Amount,
-		Order_No: request.Order_No,
-		QR_type:  request.QR_type,
-	}
-
-	qr := fmt.Sprintf("%s=%d", KASPI_QR_URL, orderID)
-
-	response.QRCode = &qr
-
-	return response
-
-}
-func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-
-	order, err := db.Storage.GetOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-
-	amount := int64(order.Amount)
-
-	if order.Paid && order.Status == 2 {
-		return nil
-	}
-
-	response := &JetinnoPayload{
-		VmcNo:    request.VmcNo,
-		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
-		Order_No: request.Order_No,
-		Amount:   &amount,
-		PayType:  &order.QRType,
-		PayDone:  &order.Paid,
-	}
-
-	if order.Paid && order.Status == 0 {
-		id, status, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-		if status != 1 {
-			*response.PayDone = false
-			return response
-		}
-
-		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
-		for err != nil {
-			log.Println(err)
-			err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
-		}
-	}
-
-	return response
-}
-
-func (c Client) Error(request JetinnoPayload) *JetinnoPayload {
-	ctx := context.Background()
-
-	err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 3)
-	if err != nil {
-		for {
-			err = db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 3)
-			if err == nil {
-				break
-			}
-			log.Println(err)
-		}
-	}
-	//save error
-	id, _, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
-	if err != nil {
-		for {
-			id, _, err = db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
-			if err == nil {
-				break
-			}
-			log.Println(err)
-		}
-	}
-	err = db.Storage.CreateError(ctx, id, *request.ErrorCode, *request.ErrorDescription)
-	if err != nil {
-		for {
-			err = db.Storage.CreateError(ctx, id, *request.ErrorCode, *request.ErrorDescription)
-			if err == nil {
-				break
-			}
-			log.Println(err)
-		}
-	}
-
-	return &JetinnoPayload{VmcNo: request.VmcNo, Command: pkg.COMMAND_ERROR_RESPONSE}
-
-}
-
-func (c *Client) MachineStatus(request JetinnoPayload) *JetinnoPayload {
-
-	ctx := context.Background()
-	if *request.Status == "clearerror" {
-		err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 1)
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-
-	}
-	return nil
-}
-
-func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *JetinnoPayload {
-
-	id, _, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-
-	if *request.IsOk == true {
-		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-	}
-	if !*request.IsOk {
-		if request.Failreason != nil {
-			err = db.Storage.CreateError(ctx, id, *request.Failreason, "")
+	for _, match := range matches {
+		if len(match) == 2 {
+			results = append(results, match[1])
+			var temp JetinnoPayload
+			i := []byte("{" + match[1] + "}")
+			c.logger.Println("request:", string(i))
+			err := sonic.ConfigFastest.Unmarshal(i, &temp)
 			if err != nil {
-				log.Println(err)
-				for {
-					err = db.Storage.CreateError(ctx, id, *request.Failreason, "")
-					if err == nil {
-						break
-					}
-				}
+				c.logger.Println("JSON ERROR:", err)
+				continue
 			}
+			jsonPayload = append(jsonPayload, temp)
 		}
 	}
-	response := &JetinnoPayload{
-		VmcNo:    request.VmcNo,
-		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,
-		Order_No: request.Order_No,
-	}
 
-	return response
-}
-
-func (c *Client) Login(request JetinnoPayload) *JetinnoPayload {
-	carrierCode := "jn9527"
-	dateTime := time.Now().Format(time.DateTime)
-	serverlist := "185.100.67.252"
-	ret := 0
-
-	response := &JetinnoPayload{
-		VmcNo:        request.VmcNo,
-		Command:      pkg.COMMAND_LOGIN_RESPONSE,
-		Carrier_Code: &carrierCode,
-		Date_Time:    &dateTime,
-		Server_List:  &serverlist,
-		Ret:          &ret,
-	}
-	return response
+	return jsonPayload
 }
