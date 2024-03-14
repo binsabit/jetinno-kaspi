@@ -94,11 +94,10 @@ func (t *TCPServer) RunTCPServer() {
 			continue
 		}
 		conn.SetKeepAlive(true)
-		client := &Client{
-			ID:     rand.Int(),
-			Conn:   conn,
-			Server: t,
-		}
+		client := NewClient(
+			conn,
+			t,
+		)
 		go client.HandleConnection()
 	}
 }
