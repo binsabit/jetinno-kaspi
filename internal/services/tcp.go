@@ -147,7 +147,7 @@ Outer:
 			}
 
 			c.VmcNo = r.VmcNo
-			c.logger.SetPrefix(fmt.Sprintf("[%d]", r.VmcNo))
+			c.logger.SetPrefix(fmt.Sprintf("[vcm_no: %d] ", r.VmcNo))
 			c.Server.Clients.Store(r.VmcNo, c)
 
 			response := c.HandleRequest(r)
