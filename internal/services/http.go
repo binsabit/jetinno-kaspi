@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"log"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -133,16 +134,19 @@ type KaspiLoginResponse struct {
 }
 
 func getTokenKaspi() (string, error) {
-	loginReq := pkg.Request{
-		URL: KaspiRefundURL + "returnApi/Auth/GetToken",
-		Header: map[string]string{
+	loginReq, err := pkg.NewRequest(
+		KaspiRefundURL+"returnApi/Auth/GetToken",
+		http.MethodPost,
+		map[string]string{
 			"Content-Type": "application/json",
 		},
-		Method: fiber.MethodPost,
-		Data: map[string]string{
+		map[string]string{
 			"Login":    KaspiLogin,
 			"Password": KaspiPassword,
-		},
+		})
+
+	if err != nil {
+		return "", err
 	}
 
 	data, err := loginReq.Do()
@@ -174,20 +178,24 @@ type RefundResponse struct {
 }
 
 func (s *Server) makeRefund(vcm int64, token string, order db.Order) error {
-	refundReq := pkg.Request{
-		URL: KaspiRefundURL + "returnApi/Refund/RefundRequest",
-		Header: map[string]string{
+	refundReq, err := pkg.NewRequest(
+		KaspiRefundURL+"returnApi/Refund/RefundRequest",
+		http.MethodPost,
+		map[string]string{
 			"Content-Type": "application/json",
 			"token":        token,
 		},
-		Method: fiber.MethodPost,
-		Data: map[string]any{
+		map[string]any{
 			"PaymentId":            order.TxnID,
 			"ReturnAmount":         order.Amount,
 			"RefundIdentificatior": uuid.New().String(),
 			"Reason":               "возврат средств клиенту",
-		},
+		})
+
+	if err != nil {
+		return err
 	}
+
 	data, err := refundReq.Do()
 	if err != nil {
 		return err
