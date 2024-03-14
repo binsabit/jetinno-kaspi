@@ -147,7 +147,7 @@ func getTokenKaspi() (string, error) {
 
 	data, err := loginReq.Do()
 	if err != nil {
-		return "", fmt.Errorf("could not do request")
+		return "", fmt.Errorf("could not do request %v", err)
 	}
 
 	var loginResp KaspiLoginResponse
