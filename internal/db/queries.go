@@ -40,7 +40,7 @@ func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, int, 
 }
 
 func (d *Database) GetVcmByNo(ctx context.Context, vcmNo string) (VendingMachine, error) {
-	query := `SELECT id,password FROM vending_machines where no = $1`
+	query := `SELECT id,password FROM vending_machines where no = $1 and deleted_at is null`
 
 	var v VendingMachine
 	err := d.db.QueryRow(ctx, query, vcmNo).Scan(&v.ID, &v.Password)
