@@ -23,6 +23,12 @@ type Order struct {
 	Paid             bool
 }
 
+type VendingMachine struct {
+	ID       int64
+	No       int64
+	Password string
+}
+
 func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, int, error) {
 	query := `SELECT id,health FROM vending_machines where no = $1`
 
@@ -31,6 +37,14 @@ func (d *Database) GetVmdIDByNo(ctx context.Context, vmcNo string) (int64, int, 
 	err := d.db.QueryRow(ctx, query, vmcNo).Scan(&id, &status)
 
 	return id, status, err
+}
+
+func (d *Database) GetVcmByNo(ctx context.Context, vcmNo string) (VendingMachine, error) {
+	query := `SELECT id,no,password FROM vending_machines where no = $1`
+
+	var v VendingMachine
+	err := d.db.QueryRow(ctx, query, vcmNo).Scan(&v.ID, &v.Password)
+	return v, err
 }
 
 func (d *Database) CreateOrder(ctx context.Context, order Order) (int64, error) {

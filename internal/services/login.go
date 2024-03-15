@@ -1,12 +1,20 @@
 package services
 
 import (
+	"context"
+	"github.com/binsabit/jetinno-kapsi/internal/db"
 	"github.com/binsabit/jetinno-kapsi/pkg"
+	"strconv"
 	"time"
 )
 
 func (c *Client) Login(request JetinnoPayload) *JetinnoPayload {
-	carrierCode := "jn9527"
+
+	vendingMachine, err := db.Storage.GetVcmByNo(context.Background(), strconv.FormatInt(request.VmcNo, 10))
+	if err != nil {
+		return nil
+	}
+	carrierCode := vendingMachine.Password
 	dateTime := time.Now().Format(time.DateTime)
 	serverlist := "185.100.67.252"
 	ret := 0
