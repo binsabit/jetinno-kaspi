@@ -48,7 +48,7 @@ func (d *Database) GetVcmByNo(ctx context.Context, vcmNo string) (VendingMachine
 }
 
 func (d *Database) GetLastNotUploadedOrder(ctx context.Context, vmcNo string) (Order, error) {
-	query := `SELECT qr_type, paid, amount, orders.status 
+	query := `SELECT orders.id, qr_type, paid, amount, orders.status 
 			FROM orders	
 			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
 			WHERE vending_machines.no = $1
@@ -56,7 +56,7 @@ func (d *Database) GetLastNotUploadedOrder(ctx context.Context, vmcNo string) (O
 
 	var order Order
 
-	err := d.db.QueryRow(ctx, query, vmcNo).Scan(&order.QRType, &order.Paid, &order.Amount, &order.Status)
+	err := d.db.QueryRow(ctx, query, vmcNo).Scan(&order.ID, &order.QRType, &order.Paid, &order.Amount, &order.Status)
 
 	return order, err
 }
@@ -76,14 +76,14 @@ func (d *Database) CreateOrder(ctx context.Context, order Order) (int64, error) 
 }
 
 func (d *Database) GetOrder(ctx context.Context, vmcNo string, orderNo string) (Order, error) {
-	query := `SELECT qr_type, paid, amount, orders.status 
+	query := `SELECT orders.id, qr_type, paid, amount, orders.status 
 			FROM orders	
 			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
 			 WHERE orders.order_no = $1 AND  vending_machines.no= $2`
 
 	var order Order
 
-	err := d.db.QueryRow(ctx, query, orderNo, vmcNo).Scan(&order.QRType, &order.Paid, &order.Amount, &order.Status)
+	err := d.db.QueryRow(ctx, query, orderNo, vmcNo).Scan(&order.ID, &order.QRType, &order.Paid, &order.Amount, &order.Status)
 
 	return order, err
 }

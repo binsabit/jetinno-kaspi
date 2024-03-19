@@ -103,7 +103,7 @@ func Refund(vcm int64, id int64) {
 
 	order, err := db.Storage.GetOrderByID(context.Background(), id)
 	if err != nil {
-		log.Println("ENSURE PAYMENT PAY DONE ERROR: ", err)
+		log.Printf("[vcm_no: %d]ENSURE Refund ERROR: %v\n", vcm, err)
 		return
 	}
 
