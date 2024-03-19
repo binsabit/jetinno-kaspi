@@ -52,7 +52,7 @@ func (d *Database) GetLastNotUploadedOrder(ctx context.Context, vmcNo string) (O
 			FROM orders	
 			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
 			WHERE vending_machines.no = $1
-			order by created_at desc limit 1`
+			order by orders.created_at desc limit 1`
 
 	var order Order
 
