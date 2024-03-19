@@ -47,6 +47,20 @@ func (d *Database) GetVcmByNo(ctx context.Context, vcmNo string) (VendingMachine
 	return v, err
 }
 
+func (d *Database) GetLastNotUploadedOrder(ctx context.Context, vmcNo string) (Order, error) {
+	query := `SELECT qr_type, paid, amount, orders.status 
+			FROM orders	
+			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
+			WHERE vending_machines.no = $1
+			sort created_at desc limit 1`
+
+	var order Order
+
+	err := d.db.QueryRow(ctx, query, vmcNo).Scan(&order.QRType, &order.Paid, &order.Amount, &order.Status)
+
+	return order, err
+}
+
 func (d *Database) CreateOrder(ctx context.Context, order Order) (int64, error) {
 	query := `INSERT INTO orders 
 				(order_no, vending_machine_id, product_id, qr_type, amount, created_at, updated_at) 
