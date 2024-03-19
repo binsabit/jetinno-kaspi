@@ -35,6 +35,12 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 				}
 			}
 		}
+		order, err := db.Storage.GetOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
+		if err != nil {
+			c.logger.Println("error: %v", err)
+		}
+
+		Refund(c.VmcNo, order.ID)
 	}
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
