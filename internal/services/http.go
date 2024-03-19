@@ -99,11 +99,11 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 
 }
 
-func Refund(vcm int64, id int64) {
+func (c *Client) Refund(vcm int64, id int64) {
 
 	order, err := db.Storage.GetOrderByID(context.Background(), id)
 	if err != nil {
-		log.Printf("[vcm_no: %d]ENSURE Refund ERROR: %v\n", vcm, err)
+		c.logger.Printf("[vcm_no: %d]ENSURE Refund ERROR: %v\n", vcm, err)
 		return
 	}
 
@@ -111,21 +111,21 @@ func Refund(vcm int64, id int64) {
 		return
 	}
 
-	token, err := GetTokenKaspi()
+	token, err := c.GetTokenKaspi()
 	if err != nil {
-		log.Printf("refund failed vcm: %d, err: %v\n", vcm, err)
+		c.logger.Printf("refund failed vcm: %d, err: %v\n", vcm, err)
 		return
 	}
 
-	err = MakeRefund(token, order)
+	err = c.MakeRefund(token, order)
 	if err != nil {
-		log.Println(err)
+		c.logger.Println(err)
 		return
 	}
 
 	err = db.Storage.UpdateOrder(context.Background(), vcm, order.OrderNo, 3)
 	if err != nil {
-		log.Println(err)
+		c.logger.Println(err)
 		return
 	}
 }
@@ -134,7 +134,7 @@ type KaspiLoginResponse struct {
 	Token *string `json:"token,omitempty"`
 }
 
-func GetTokenKaspi() (string, error) {
+func (c *Client) GetTokenKaspi() (string, error) {
 	loginReq, err := pkg.NewRequest(
 		KaspiRefundURL+"returnApi/Auth/GetToken",
 		http.MethodPost,
@@ -178,7 +178,7 @@ type RefundResponse struct {
 	} `json:"error"`
 }
 
-func MakeRefund(token string, order db.Order) error {
+func (c *Client) MakeRefund(token string, order db.Order) error {
 	refundIdentifier := uuid.New().String()
 
 	refundReq, err := pkg.NewRequest(
@@ -209,9 +209,9 @@ func MakeRefund(token string, order db.Order) error {
 	if err != nil {
 		return err
 	}
+	c.logger.Printf("refunding %d, %s\n", order.TxnID, refundIdentifier)
 	if resp.StatusCode != 0 {
-		return fmt.Errorf("refund error with %d,msg:%s ", order.ID, resp.Error.ErrorMessage)
+		c.logger.Printf("refund error with %d,msg:%s \n", order.ID, resp.Error.ErrorMessage)
 	}
-	log.Printf("refunding %d, %s\n", order.TxnID, refundIdentifier)
 	return nil
 }
