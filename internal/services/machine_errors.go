@@ -47,7 +47,7 @@ func (c Client) Error(request JetinnoPayload) *JetinnoPayload {
 		return &JetinnoPayload{VmcNo: request.VmcNo, Command: pkg.COMMAND_ERROR_RESPONSE}
 
 	}
-	Refund(request.VmcNo, order.ID)
+	c.Refund(request.VmcNo, order.ID)
 
 	return &JetinnoPayload{VmcNo: request.VmcNo, Command: pkg.COMMAND_ERROR_RESPONSE}
 
