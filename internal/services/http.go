@@ -179,6 +179,8 @@ type RefundResponse struct {
 }
 
 func MakeRefund(token string, order db.Order) error {
+	refundIdentifier := uuid.New().String()
+
 	refundReq, err := pkg.NewRequest(
 		KaspiRefundURL+"returnApi/Refund/RefundRequest",
 		http.MethodPost,
@@ -189,7 +191,7 @@ func MakeRefund(token string, order db.Order) error {
 		map[string]any{
 			"PaymentId":            order.TxnID,
 			"ReturnAmount":         int64(order.Amount),
-			"RefundIdentificatior": uuid.New().String(),
+			"RefundIdentificatior": refundIdentifier,
 			"Reason":               "возврат средств клиенту",
 		})
 
@@ -210,6 +212,6 @@ func MakeRefund(token string, order db.Order) error {
 	if resp.StatusCode != 0 {
 		return fmt.Errorf("refund error with %d,msg:%s ", order.ID, resp.Error.ErrorMessage)
 	}
-
+	log.Printf("refunding %d, %s\n", order.TxnID, refundIdentifier)
 	return nil
 }
