@@ -19,6 +19,7 @@ func main() {
 	services.KaspiLogin = cfg.KASPI_LOGIN
 	services.KaspiPassword = cfg.KASPI_PASSWORD
 	services.KaspiRefundURL = cfg.KASPI_REFUND_URL
+	services.KaspiRefundDuration = cfg.REFUND_TIME
 	err = db.New(context.Background())
 	if err != nil {
 		log.Fatal(err)

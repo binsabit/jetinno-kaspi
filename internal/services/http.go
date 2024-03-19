@@ -118,14 +118,16 @@ func (s *Server) Refund(vcm int64, id int64) {
 		return
 	}
 
-	err = s.makeRefund(vcm, token, order)
+	err = s.makeRefund(token, order)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	err = db.Storage.UpdateOrder(context.Background(), vcm, order.OrderNo, 3)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 }
 
@@ -177,7 +179,7 @@ type RefundResponse struct {
 	} `json:"error"`
 }
 
-func (s *Server) makeRefund(vcm int64, token string, order db.Order) error {
+func (s *Server) makeRefund(token string, order db.Order) error {
 	refundReq, err := pkg.NewRequest(
 		KaspiRefundURL+"returnApi/Refund/RefundRequest",
 		http.MethodPost,
@@ -187,7 +189,7 @@ func (s *Server) makeRefund(vcm int64, token string, order db.Order) error {
 		},
 		map[string]any{
 			"PaymentId":            order.TxnID,
-			"ReturnAmount":         order.Amount,
+			"ReturnAmount":         int64(order.Amount),
 			"RefundIdentificatior": uuid.New().String(),
 			"Reason":               "возврат средств клиенту",
 		})
