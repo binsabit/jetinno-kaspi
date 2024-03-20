@@ -40,7 +40,7 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 			c.logger.Println("error: %v", err)
 		}
 
-		Refund(c.VmcNo, order.ID)
+		c.Refund(c.VmcNo, order.ID)
 	}
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
