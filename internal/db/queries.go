@@ -51,7 +51,7 @@ func (d *Database) GetLastNotUploadedOrder(ctx context.Context, vmcNo string) (O
 	query := `SELECT orders.id, qr_type, paid, amount, orders.status 
 			FROM orders	
 			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
-			WHERE vending_machines.no = $1
+			WHERE vending_machines.no = $1 and orders.created_at >= current_timestamp - interval '2 minutes'
 			order by orders.created_at desc limit 1`
 
 	var order Order
