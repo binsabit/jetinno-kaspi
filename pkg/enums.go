@@ -40,4 +40,5 @@ var ErrorCodeMap = map[string]string{
 	"ERROR:5406": "Cup container dispenses cup failure",
 	"ERROR:5902": "Bucket 2 Lack Of Water",
 	"ERROR:5B00": "Drip tray is not in place",
+	"ERROR:7200": "Air break filling timeout",
 }
