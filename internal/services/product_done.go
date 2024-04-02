@@ -24,17 +24,22 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 	}
 	if !*request.IsOk {
 		if request.Failreason != nil {
-			err = db.Storage.CreateError(ctx, id, *request.Failreason, "")
+			description, ok := pkg.ErrorCodeMap[*request.Failreason]
+			if !ok {
+				description = "Unknown error"
+			}
+			err = db.Storage.CreateError(ctx, id, *request.Failreason, description)
 			if err != nil {
 				c.logger.Println(err)
 				for {
-					err = db.Storage.CreateError(ctx, id, *request.Failreason, "")
+					err = db.Storage.CreateError(ctx, id, *request.Failreason, description)
 					if err == nil {
 						break
 					}
 				}
 			}
 		}
+
 		order, err := db.Storage.GetOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
 		if err != nil {
 			c.logger.Println("error: %v", err)
