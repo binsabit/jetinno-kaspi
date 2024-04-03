@@ -238,7 +238,6 @@ func (c Client) extractJSON(s string) []JetinnoPayload {
 			c.logger.Println("request:", string(i))
 			err := sonic.ConfigFastest.Unmarshal(i, &temp)
 			if err != nil {
-				c.logger.Println("JSON ERROR:", err)
 				continue
 			}
 			jsonPayload = append(jsonPayload, temp)
