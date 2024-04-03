@@ -31,14 +31,6 @@ func (c Client) Error(request JetinnoPayload) *JetinnoPayload {
 		}
 	}
 
-	order, err := db.Storage.GetLastNotUploadedOrder(ctx, strconv.FormatInt(request.VmcNo, 10))
-	if err != nil {
-		c.logger.Println("error while getting last order: %v", err)
-		return &JetinnoPayload{VmcNo: request.VmcNo, Command: pkg.COMMAND_ERROR_RESPONSE}
-
-	}
-	c.Refund(request.VmcNo, order.ID)
-
 	return &JetinnoPayload{VmcNo: request.VmcNo, Command: pkg.COMMAND_ERROR_RESPONSE}
 
 }
