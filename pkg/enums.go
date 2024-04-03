@@ -11,6 +11,13 @@ var (
 	PAYMENT_STATUS_PAID    = true
 )
 
+var (
+	OrderCreated   = 0
+	OrderPaid      = 1
+	OrderUploaded  = 2
+	OrderDisrupted = 3
+)
+
 const (
 	COMMAND_HEARDBEAT              = "hb"
 	COMMAND_QR_REQUEST             = "qrcode"

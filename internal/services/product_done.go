@@ -16,7 +16,7 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 	}
 
 	if *request.IsOk == true {
-		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
+		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, pkg.OrderUploaded)
 		if err != nil {
 			c.logger.Println(err)
 			return nil
@@ -29,7 +29,7 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 			c.logger.Println("error: %v", err)
 		}
 
-		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
+		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, pkg.OrderDisrupted)
 		if err != nil {
 			c.logger.Println(err)
 			return nil
