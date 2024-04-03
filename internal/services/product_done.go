@@ -22,31 +22,21 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 			return nil
 		}
 	}
-	if !*request.IsOk {
-		if request.Failreason != nil {
-			description, ok := pkg.ErrorCodeMap[*request.Failreason]
-			if !ok {
-				description = "Unknown error"
-			}
-			err = db.Storage.CreateError(ctx, id, *request.Failreason, description)
-			if err != nil {
-				c.logger.Println(err)
-				for {
-					err = db.Storage.CreateError(ctx, id, *request.Failreason, description)
-					if err == nil {
-						break
-					}
-				}
-			}
-		}
 
+	if !*request.IsOk {
 		order, err := db.Storage.GetOrder(ctx, strconv.FormatInt(request.VmcNo, 10), *request.Order_No)
 		if err != nil {
 			c.logger.Println("error: %v", err)
 		}
 
+		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 2)
+		if err != nil {
+			c.logger.Println(err)
+			return nil
+		}
 		c.Refund(c.VmcNo, order.ID)
 	}
+
 	response := &JetinnoPayload{
 		VmcNo:    request.VmcNo,
 		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,

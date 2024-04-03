@@ -10,16 +10,6 @@ import (
 func (c Client) Error(request JetinnoPayload) *JetinnoPayload {
 	ctx := context.Background()
 
-	//err := db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 3)
-	//if err != nil {
-	//	for {
-	//		err = db.Storage.UpdateMachineStatus(ctx, strconv.FormatInt(request.VmcNo, 10), 3)
-	//		if err == nil {
-	//			break
-	//		}
-	//		c.logger.Println(err)
-	//	}
-	//}
 	id, _, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
 	if err != nil {
 		for {
