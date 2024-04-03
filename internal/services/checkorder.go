@@ -17,7 +17,7 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 
 	amount := int64(order.Amount)
 
-	if order.Paid && order.Status == 2 {
+	if order.Paid && order.Status == pkg.OrderUploaded {
 		return nil
 	}
 
@@ -30,21 +30,21 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 		PayDone:  &order.Paid,
 	}
 
-	if order.Paid && order.Status == 0 {
+	if order.Paid && order.Status == pkg.OrderCreated {
 		id, status, err := db.Storage.GetVmdIDByNo(ctx, strconv.FormatInt(request.VmcNo, 10))
 		if err != nil {
 			c.logger.Println(err)
 			return nil
 		}
-		if status != 1 {
+		if status != pkg.OrderPaid {
 			*response.PayDone = false
 			return response
 		}
 
-		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
+		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, pkg.OrderPaid)
 		for err != nil {
 			c.logger.Println(err)
-			err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, 1)
+			err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, pkg.OrderPaid)
 		}
 	}
 
