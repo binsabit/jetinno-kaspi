@@ -237,6 +237,7 @@ func (c Client) extractJSON(s string) []JetinnoPayload {
 			if err != nil {
 				continue
 			}
+			log.Println(string(i))
 			jsonPayload = append(jsonPayload, temp)
 		}
 	}
