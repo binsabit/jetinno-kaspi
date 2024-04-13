@@ -17,7 +17,6 @@ func (c *Client) PayDone(ctx context.Context, order db.Order) *JetinnoPayload {
 	if status != 1 {
 		return nil
 	}
-	c.logger.Println("order number", order.OrderNo)
 	err = db.Storage.UpdateOrder(ctx, id, order.OrderNo, pkg.OrderPaid)
 	if err != nil {
 		c.logger.Println(err)

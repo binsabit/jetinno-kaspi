@@ -141,13 +141,12 @@ Outer:
 
 			if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
 				if val.(*Client).ID != c.ID {
-					log.Println("Vending machine exists")
+					log.Println("Vending machine does not exists")
 					return
 				}
 			}
 
 			c.VmcNo = r.VmcNo
-			c.logger.SetPrefix(fmt.Sprintf("[vcm_no: %d] ", r.VmcNo))
 			c.Server.Clients.Store(r.VmcNo, c)
 
 			response := c.HandleRequest(r)
@@ -191,7 +190,6 @@ func (c *Client) Write(response JetinnoPayload) error {
 	if err != nil {
 		return err
 	}
-	c.logger.Println(string(data))
 	return nil
 }
 
@@ -235,7 +233,6 @@ func (c Client) extractJSON(s string) []JetinnoPayload {
 			results = append(results, match[1])
 			var temp JetinnoPayload
 			i := []byte("{" + match[1] + "}")
-			c.logger.Println("request:", string(i))
 			err := sonic.ConfigFastest.Unmarshal(i, &temp)
 			if err != nil {
 				continue
