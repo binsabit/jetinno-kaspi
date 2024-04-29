@@ -190,6 +190,9 @@ func (c *Client) Write(response JetinnoPayload) error {
 	if err != nil {
 		return err
 	}
+	if response.Command != pkg.COMMAND_HEARDBEAT {
+		c.logger.Println(response)
+	}
 	return nil
 }
 
@@ -238,6 +241,9 @@ func (c Client) extractJSON(s string) []JetinnoPayload {
 				continue
 			}
 			jsonPayload = append(jsonPayload, temp)
+			if temp.Command != pkg.COMMAND_HEARDBEAT {
+				c.logger.Println(i)
+			}
 		}
 	}
 
