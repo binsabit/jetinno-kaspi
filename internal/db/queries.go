@@ -15,8 +15,8 @@ type Order struct {
 	Amount           float32
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	TxnID            uint64
-	TxnDate          string
+	TxnID            *uint64
+	TxnDate          *string
 	Status           int
 	Comment          string
 	TxnSum           float64
