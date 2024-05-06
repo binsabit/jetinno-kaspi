@@ -67,7 +67,6 @@ func (s *Server) EnsureOrderPayment(order db.Order) {
 		return
 	}
 	for order.Status == 0 {
-		log.Println("trying to ", vmcno)
 		val, ok := s.TCPServer.Clients.Load(vmcno)
 		if !ok {
 			log.Println("did not found vcmno")

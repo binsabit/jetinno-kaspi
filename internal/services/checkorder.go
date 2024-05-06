@@ -44,7 +44,7 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 		err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, pkg.OrderPaid)
 		for err != nil {
 			c.logger.Println(err)
-			err = db.Storage.UpdateOrder(ctx, id, *request.Order_No, pkg.OrderPaid)
+			return nil
 		}
 	}
 
