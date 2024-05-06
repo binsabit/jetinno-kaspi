@@ -24,13 +24,14 @@ type Client struct {
 	logger *log.Logger
 }
 
-func NewClient(conn *net.TCPConn, server *TCPServer) *Client {
+func NewClient(conn *net.TCPConn, server *TCPServer, file *os.File) *Client {
 	return &Client{
 		ID:     rand.Int(),
 		Conn:   conn,
 		Server: server,
-		logger: log.New(os.Stdout, "", log.LstdFlags),
+		logger: log.New(file, "", log.LstdFlags),
 	}
+
 }
 
 type JetinnoPayload struct {
@@ -94,9 +95,15 @@ func (t *TCPServer) RunTCPServer() {
 			continue
 		}
 		conn.SetKeepAlive(true)
+		file, err := os.OpenFile(time.Now().Format(time.DateOnly)+".txt", os.O_CREATE|os.O_APPEND|os.O_RDONLY, os.ModePerm)
+		if err != nil {
+			conn.Close()
+			continue
+		}
 		client := NewClient(
 			conn,
 			t,
+			file,
 		)
 		go client.HandleConnection()
 	}
