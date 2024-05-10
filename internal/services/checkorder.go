@@ -22,12 +22,13 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 	}
 
 	response := &JetinnoPayload{
-		VmcNo:    request.VmcNo,
-		Command:  pkg.COMMAND_CHECKORDER_RESPONSE,
-		Order_No: request.Order_No,
-		Amount:   &amount,
-		PayType:  &order.QRType,
-		PayDone:  &order.Paid,
+		VmcNo:      request.VmcNo,
+		Command:    pkg.COMMAND_CHECKORDER_RESPONSE,
+		Order_No:   request.Order_No,
+		Amount:     &amount,
+		Pruduct_ID: request.Pruduct_ID,
+		PayType:    &order.QRType,
+		PayDone:    &order.Paid,
 	}
 
 	if order.Paid && order.Status == pkg.OrderCreated {

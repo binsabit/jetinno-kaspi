@@ -38,9 +38,10 @@ func (c *Client) ProductDone(ctx context.Context, request JetinnoPayload) *Jetin
 	}
 
 	response := &JetinnoPayload{
-		VmcNo:    request.VmcNo,
-		Command:  pkg.COMMAND_PRODUCTDONE_RESPONSE,
-		Order_No: request.Order_No,
+		VmcNo:      request.VmcNo,
+		Command:    pkg.COMMAND_PRODUCTDONE_RESPONSE,
+		Pruduct_ID: request.Pruduct_ID,
+		Order_No:   request.Order_No,
 	}
 
 	return response

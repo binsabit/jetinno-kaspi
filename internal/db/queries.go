@@ -89,14 +89,14 @@ func (d *Database) GetOrder(ctx context.Context, vmcNo string, orderNo string) (
 }
 
 func (d *Database) GetOrderByID(ctx context.Context, orderID int64) (Order, error) {
-	query := `SELECT orders.id, qr_type, paid, amount, orders.status, orders.order_no, vending_machines.no, txn_id,txn_sum 
+	query := `SELECT orders.id, qr_type, paid, amount, orders.status, orders.order_no, vending_machines.no, txn_id,txn_sum,product_id
 			FROM orders	
 			JOIN vending_machines on vending_machines.id = orders.vending_machine_id 
 			 WHERE orders.id = $1`
 
 	var order Order
 
-	err := d.db.QueryRow(ctx, query, orderID).Scan(&order.ID, &order.QRType, &order.Paid, &order.Amount, &order.Status, &order.OrderNo, &order.VendingMachineNo, &order.TxnID, &order.TxnSum)
+	err := d.db.QueryRow(ctx, query, orderID).Scan(&order.ID, &order.QRType, &order.Paid, &order.Amount, &order.Status, &order.OrderNo, &order.VendingMachineNo, &order.TxnID, &order.TxnSum, &order.ProductID)
 
 	return order, err
 }

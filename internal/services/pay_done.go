@@ -29,6 +29,7 @@ func (c *Client) PayDone(ctx context.Context, order db.Order) *JetinnoPayload {
 		VmcNo:          vmcNo,
 		Command:        pkg.COMMAND_PAYDONE_REQUEST,
 		Product_Amount: &amount,
+		Pruduct_ID:     &order.ProductID,
 		Order_No:       &order.OrderNo,
 		PayDone:        &order.Paid,
 		PayType:        &order.QRType,
