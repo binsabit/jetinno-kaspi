@@ -20,7 +20,6 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 	if order.Paid && order.Status == pkg.OrderUploaded {
 		return nil
 	}
-
 	response := &JetinnoPayload{
 		VmcNo:      request.VmcNo,
 		Command:    pkg.COMMAND_CHECKORDER_RESPONSE,
@@ -28,7 +27,9 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 		Amount:     &amount,
 		Pruduct_ID: request.Pruduct_ID,
 		PayType:    &order.QRType,
-		PayDone:    &order.Paid,
+	}
+	if order.Paid {
+		response.PayDone = &order.Paid
 	}
 
 	if order.Paid && order.Status == pkg.OrderCreated {
