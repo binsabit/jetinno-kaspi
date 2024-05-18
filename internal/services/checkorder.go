@@ -17,6 +17,10 @@ func (c *Client) CheckOrder(ctx context.Context, request JetinnoPayload) *Jetinn
 
 	amount := int64(order.Amount)
 
+	if !order.Paid {
+		return nil
+	}
+
 	if order.Paid && order.Status == pkg.OrderUploaded {
 		return nil
 	}
