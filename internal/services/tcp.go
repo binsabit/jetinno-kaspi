@@ -148,7 +148,7 @@ Outer:
 
 			if val, ok := c.Server.Clients.Load(r.VmcNo); ok {
 				if val.(*Client).ID != c.ID {
-					log.Println("Vending machine  exists")
+					log.Println("Vending machine  exists ", val.(*Client).VmcNo)
 					return
 				}
 			}
